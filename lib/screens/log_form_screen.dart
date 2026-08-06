@@ -59,6 +59,15 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
 
   late String _trainKind; // 列车种类
 
+  /// 到达日偏移：0=当天，1=次日，2=第3天
+  late int _arrivalDayOffset;
+
+  /// 本务机车列表（可多台，换挂/重联）
+  late List<_LocomotiveDraft> _locomotives;
+
+  /// 是否允许直接返回（保存/取消/删除完成后置 true）
+  bool _allowPop = false;
+
   bool get _isEditing => widget.editing != null;
 
   @override
@@ -93,6 +102,36 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _emuFormation = TextEditingController(text: e?.emuFormation ?? '');
     _emuDepot = TextEditingController(text: e?.emuDepot ?? '');
     _carNumber = TextEditingController(text: e?.carNumber ?? '');
+
+    // ===== v5 状态 =====
+    _arrivalDayOffset = e?.arrivalDayOffset ?? 0;
+    // 机车列表：新增时给一台空机车；编辑时先用旧字段兜底，再异步加载多台机车
+    _locomotives = [
+      _LocomotiveDraft(
+        model: e?.locomotiveModel ?? '',
+        number: e?.locomotiveNumber ?? '',
+        factory: e?.locomotiveFactory ?? '',
+      ),
+    ];
+    if (e != null) {
+      Future.microtask(() async {
+        final db = ref.read(databaseProvider);
+        final locos = await db.getLocomotives(e.id);
+        if (!mounted) return;
+        if (locos.isNotEmpty) {
+          setState(() {
+            _locomotives = [
+              for (final l in locos)
+                _LocomotiveDraft(
+                  model: l.model,
+                  number: l.number,
+                  factory: l.factory,
+                ),
+            ];
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -117,6 +156,9 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _emuFormation.dispose();
     _emuDepot.dispose();
     _carNumber.dispose();
+    for (final l in _locomotives) {
+      l.dispose();
+    }
     super.dispose();
   }
 
@@ -174,9 +216,9 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     }
   }
 
-  Future<void> _save() async {
-    // 表单校验：必填项是否合法
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _save({bool silent = false}) async {
+    // 表单校验：必填项是否合法（silent 模式为返回键自动保存，跳过校验）
+    if (!silent && !_formKey.currentState!.validate()) return;
 
     final db = ref.read(databaseProvider);
 
@@ -200,9 +242,6 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
       bureau: Value(_bureau.text.trim()),
       depot: Value(_depot.text.trim()),
       maxSpeed: Value(int.tryParse(_maxSpeed.text.trim())),
-      locomotiveModel: Value(_locomotiveModel.text.trim()),
-      locomotiveNumber: Value(_locomotiveNumber.text.trim()),
-      locomotiveFactory: Value(_locomotiveFactory.text.trim()),
       haulingSection: Value(_haulingSection.text.trim()),
       emuModel: Value(_emuModel.text.trim()),
       emuNumber: Value(_emuNumber.text.trim()),
@@ -210,25 +249,195 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
       emuFormation: Value(_emuFormation.text.trim()),
       emuDepot: Value(_emuDepot.text.trim()),
       carNumber: Value(_carNumber.text.trim()),
+      // v5 跨天偏移 + 第一台机车同步旧字段（兼容旧卡片显示）
+      arrivalDayOffset: Value(_arrivalDayOffset),
+      locomotiveModel: Value(
+        _locomotives.isNotEmpty ? _locomotives.first.model.text.trim() : '',
+      ),
+      locomotiveNumber: Value(
+        _locomotives.isNotEmpty ? _locomotives.first.number.text.trim() : '',
+      ),
+      locomotiveFactory: Value(
+        _locomotives.isNotEmpty ? _locomotives.first.factory.text.trim() : '',
+      ),
     );
 
+    final locomotiveItems = _locomotiveCompanions();
     if (_isEditing) {
       await db.updateLog(companion);
+      await db.replaceLocomotives(widget.editing!.id, locomotiveItems);
     } else {
-      await db.addLog(companion);
+      final newId = await db.addLog(companion);
+      await db.replaceLocomotives(newId, locomotiveItems);
     }
 
+    _allowPop = true;
     if (mounted) Navigator.of(context).pop();
+  }
+
+  /// 取消编辑：不保存直接退出
+  void _cancelAndExit() {
+    _allowPop = true;
+    Navigator.of(context).pop();
+  }
+
+  /// 返回键/返回箭头：自动保存后退出
+  Future<void> _autoSaveOnBack() async {
+    if (_allowPop) return;
+    await _save(silent: true);
+  }
+
+  /// 删除当前记录（需确认）
+  Future<void> _deleteAndExit() async {
+    final e = widget.editing;
+    if (e == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('确认删除这条记录？'),
+        content: Text(
+          '${e.trainNumber} ${e.departureStation}→${e.arrivalStation}\n'
+          '删除后不可恢复。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final db = ref.read(databaseProvider);
+    await db.deleteLog(e.id);
+    _allowPop = true;
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  /// 生成机车列表数据（跳过未填型号的空白草稿）
+  List<LocomotivesCompanion> _locomotiveCompanions() {
+    return [
+      for (final l in _locomotives)
+        if (l.model.text.trim().isNotEmpty)
+          LocomotivesCompanion(
+            model: Value(l.model.text.trim()),
+            number: Value(l.number.text.trim()),
+            factory: Value(l.factory.text.trim()),
+          ),
+    ];
+  }
+
+  /// 添加一台本务机车
+  void _addLocomotive() {
+    setState(() => _locomotives.add(_LocomotiveDraft()));
+  }
+
+  /// 删除一台本务机车（至少保留一台）
+  void _removeLocomotive(int index) {
+    if (_locomotives.length <= 1) return;
+    _locomotives[index].dispose();
+    setState(() => _locomotives.removeAt(index));
+  }
+
+  /// 单台本务机车的编辑卡片（型号/编号/制造厂 + 删除按钮）
+  Widget _locomotiveEditor({required int index}) {
+    final l = _locomotives[index];
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 4, 10, 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '机车 ${index + 1}',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: '删除这台机车',
+                visualDensity: VisualDensity.compact,
+                onPressed: _locomotives.length > 1
+                    ? () => _removeLocomotive(index)
+                    : null,
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: l.model,
+                  decoration: const InputDecoration(
+                    labelText: '机车型号',
+                    hintText: '如 HXD3D、SS9G',
+                    prefixIcon: Icon(Icons.directions_railway),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextFormField(
+                  controller: l.number,
+                  decoration: const InputDecoration(
+                    labelText: '机车编号',
+                    hintText: '如 HXD3D-0031',
+                    prefixIcon: Icon(Icons.tag),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: l.factory,
+            decoration: const InputDecoration(
+              labelText: '制造厂',
+              hintText: '如 大连机车',
+              prefixIcon: Icon(Icons.build),
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? '编辑记录' : '新增记录'),
-        centerTitle: true,
-      ),
+    return PopScope(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _autoSaveOnBack();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _autoSaveOnBack,
+          ),
+          title: Text(_isEditing ? '编辑记录' : '新增记录'),
+          centerTitle: true,
+        ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -314,6 +523,28 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
             ),
             const SizedBox(height: 14),
 
+            // ---- 发车/到达时间 ----（上方保持）
+            // ---- 到达日期（跨天行程）----
+            DropdownButtonFormField<int>(
+              initialValue: _arrivalDayOffset,
+              decoration: const InputDecoration(
+                labelText: '到达日期',
+                prefixIcon: Icon(Icons.date_range),
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 0, child: Text('当天到达')),
+                DropdownMenuItem(value: 1, child: Text('次日到达')),
+                DropdownMenuItem(value: 2, child: Text('第3天到达')),
+                DropdownMenuItem(value: 3, child: Text('第4天到达')),
+              ],
+              onChanged: (v) => setState(() => _arrivalDayOffset = v ?? 0),
+            ),
+            const SizedBox(height: 14),
+
+            // ---- 乘坐信息（席别/车厢/座位/里程）----
+            const _SectionTitle(title: '乘坐信息'),
+
             // ---- 席别下拉 ----
             DropdownButtonFormField<String>(
               initialValue: _seatClass,
@@ -326,6 +557,61 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
                   .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                   .toList(),
               onChanged: (v) => setState(() => _seatClass = v ?? '二等座'),
+            ),
+            const SizedBox(height: 14),
+
+            // ---- 车厢 / 座位 ----
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _carriage,
+                    decoration: const InputDecoration(
+                      labelText: '车厢',
+                      hintText: '如 08 车',
+                      prefixIcon: Icon(Icons.door_sliding),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextFormField(
+                    controller: _seatNumber,
+                    decoration: const InputDecoration(
+                      labelText: '座位号',
+                      hintText: '如 12F',
+                      prefixIcon: Icon(Icons.event_seat),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // ---- 车厢编号（车种代码+编号，如 ZYS102001）----
+            TextFormField(
+              controller: _carNumber,
+              decoration: const InputDecoration(
+                labelText: '车厢编号',
+                hintText: '如 ZYS102001（车种代码+编号）',
+                prefixIcon: Icon(Icons.qr_code_2),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // ---- 里程 ----
+            TextFormField(
+              controller: _distance,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: '里程（公里）',
+                prefixIcon: Icon(Icons.straighten),
+                suffixText: 'km',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 14),
 
@@ -409,13 +695,10 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
                       },
                       displayStringForOption: (m) => m.name,
                       onSelected: (m) {
-                        // 自动补全编组和定员
+                        // 选中车型：编组和定员始终跟随新车型更新
                         _emuModel.text = m.name;
-                        if (_emuFormation.text.trim().isEmpty) {
-                          _emuFormation.text = m.formation;
-                        }
-                        if (m.capacity != null &&
-                            _emuCapacity.text.trim().isEmpty) {
+                        _emuFormation.text = m.formation;
+                        if (m.capacity != null) {
                           _emuCapacity.text = m.capacity.toString();
                         }
                         setState(() {});
@@ -490,119 +773,32 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
               ),
               const SizedBox(height: 18),
             ] else if (_trainKind == '普速机辆') ...[
-              const _SectionTitle(title: '本务机车信息'),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _locomotiveModel,
-                      decoration: const InputDecoration(
-                        labelText: '机车型号',
-                        hintText: '如 HXD3D、SS9G',
-                        prefixIcon: Icon(Icons.directions_railway),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _locomotiveNumber,
-                      decoration: const InputDecoration(
-                        labelText: '机车编号',
-                        hintText: '如 HXD3D-0031',
-                        prefixIcon: Icon(Icons.tag),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
+              const _SectionTitle(title: '本务机车（可多台：换挂/重联）'),
+              for (var i = 0; i < _locomotives.length; i++) ...[
+                _locomotiveEditor(index: i),
+                const SizedBox(height: 10),
+              ],
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _addLocomotive,
+                  icon: const Icon(Icons.add),
+                  label: const Text('添加本务机车'),
+                ),
               ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _locomotiveFactory,
-                      decoration: const InputDecoration(
-                        labelText: '制造厂',
-                        hintText: '如 大连机车',
-                        prefixIcon: Icon(Icons.build),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _haulingSection,
-                      decoration: const InputDecoration(
-                        labelText: '牵引区间',
-                        hintText: '如 北京—广州',
-                        prefixIcon: Icon(Icons.route),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _haulingSection,
+                decoration: const InputDecoration(
+                  labelText: '牵引区间',
+                  hintText: '如 北京—广州',
+                  prefixIcon: Icon(Icons.route),
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 18),
             ],
 
-            // ---- 车厢 / 座位 ----
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _carriage,
-                    decoration: const InputDecoration(
-                      labelText: '车厢',
-                      hintText: '如 08 车',
-                      prefixIcon: Icon(Icons.door_sliding),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextFormField(
-                    controller: _seatNumber,
-                    decoration: const InputDecoration(
-                      labelText: '座位号',
-                      hintText: '如 12F',
-                      prefixIcon: Icon(Icons.event_seat),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // ---- 车厢编号（车种代码+编号，如 ZYS102001）----
-            TextFormField(
-              controller: _carNumber,
-              decoration: const InputDecoration(
-                labelText: '车厢编号',
-                hintText: '如 ZYS102001（车种代码+编号）',
-                prefixIcon: Icon(Icons.qr_code_2),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // ---- 里程 ----
-            TextFormField(
-              controller: _distance,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: '里程（公里）',
-                prefixIcon: Icon(Icons.straighten),
-                suffixText: 'km',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 14),
 
             // ---- 评分 ----
             _FieldLabel(
@@ -636,17 +832,50 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ---- 保存按钮 ----
-            FilledButton.icon(
-              onPressed: _save,
-              icon: const Icon(Icons.save),
-              label: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 14),
-                child: Text('保存'),
-              ),
+            // ---- 保存 / 取消 /（编辑时）删除 ----
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _cancelAndExit,
+                    icon: const Icon(Icons.close),
+                    label: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      child: Text('取消'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton.icon(
+                    onPressed: _save,
+                    icon: const Icon(Icons.save),
+                    label: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      child: Text('保存'),
+                    ),
+                  ),
+                ),
+              ],
             ),
+            if (_isEditing) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: _deleteAndExit,
+                icon: const Icon(Icons.delete_outline),
+                label: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Text('删除这条记录'),
+                ),
+              ),
+            ],
           ],
         ),
+      ),
       ),
     );
   }
@@ -741,6 +970,27 @@ class _TimeField extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// 表单内的单台本务机车草稿（含型号/编号/制造厂输入控制器）
+class _LocomotiveDraft {
+  final TextEditingController model;
+  final TextEditingController number;
+  final TextEditingController factory;
+
+  _LocomotiveDraft({
+    String model = '',
+    String number = '',
+    String factory = '',
+  })  : model = TextEditingController(text: model),
+        number = TextEditingController(text: number),
+        factory = TextEditingController(text: factory);
+
+  void dispose() {
+    model.dispose();
+    number.dispose();
+    factory.dispose();
   }
 }
 

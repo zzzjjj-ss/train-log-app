@@ -91,10 +91,31 @@ class TrainLogs extends Table {
 
   /// 车厢编号，如：ZYS102001（车种代码+编号，v3）
   TextColumn get carNumber => text().withDefault(const Constant(''))();
+
+  /// 到达日偏移：0=当天，1=次日，2=第3天（跨天行程，v5）
+  IntColumn get arrivalDayOffset => integer().withDefault(const Constant(0))();
+}
+
+/// 本务机车表：一趟车可有多台机车（中途换挂 / 双机重联）
+class Locomotives extends Table {
+  /// 主键，自增 id
+  IntColumn get id => integer().autoIncrement()();
+
+  /// 所属运转记录 id
+  IntColumn get logId => integer().references(TrainLogs, #id)();
+
+  /// 机车型号，如：HXD3D、SS9G
+  TextColumn get model => text()();
+
+  /// 机车编号，如：HXD3D-0031
+  TextColumn get number => text().withDefault(const Constant(''))();
+
+  /// 制造厂，如：大连机车
+  TextColumn get factory => text().withDefault(const Constant(''))();
 }
 
 /// 数据库主体。drift 会根据这里的定义生成 _\$AppDatabase 基类。
-@DriftDatabase(tables: [TrainLogs])
+@DriftDatabase(tables: [TrainLogs, Locomotives])
 class AppDatabase extends _$AppDatabase {
   /// [executor] 可选：正常运行时用 drift_flutter 自动配置的数据库；
   /// 测试时可以传入内存数据库 NativeDatabase.memory() 来隔离数据。
@@ -102,7 +123,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'train_log_app'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// 数据库迁移：自愈式 —— 先检查列是否存在，缺失才添加。
   /// 解决"迁移中断导致 duplicate column"问题（列已加但版本号未更新时，
@@ -127,6 +148,10 @@ class AppDatabase extends _$AppDatabase {
       await _addColumnIfMissing(m, 'emu_depot', "TEXT NOT NULL DEFAULT ''");
       // v3 车厢编号
       await _addColumnIfMissing(m, 'car_number', "TEXT NOT NULL DEFAULT ''");
+      // v5 跨天到达日偏移
+      await _addColumnIfMissing(m, 'arrival_day_offset', 'INTEGER NOT NULL DEFAULT 0');
+      // v5 本务机车表（多台机车）
+      await m.createTable(locomotives);
     },
   );
 
@@ -165,8 +190,38 @@ class AppDatabase extends _$AppDatabase {
     return update(trainLogs).replace(entry);
   }
 
-  /// 按 id 删除一条记录
-  Future<void> deleteLog(int id) {
-    return (delete(trainLogs)..where((t) => t.id.equals(id))).go();
+  /// 按 id 删除一条记录（连带删除其本务机车记录）
+  Future<void> deleteLog(int id) async {
+    await (delete(locomotives)..where((l) => l.logId.equals(id))).go();
+    await (delete(trainLogs)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// 监听某条记录的本务机车列表（按 id 排序）
+  Stream<List<Locomotive>> watchLocomotives(int logId) {
+    final query = select(locomotives)
+      ..where((l) => l.logId.equals(logId))
+      ..orderBy([(l) => OrderingTerm.asc(l.id)]);
+    return query.watch();
+  }
+
+  /// 整组替换某条记录的本务机车（先删旧、再插新）
+  Future<void> replaceLocomotives(
+    int logId,
+    List<LocomotivesCompanion> items,
+  ) async {
+    await transaction(() async {
+      await (delete(locomotives)..where((l) => l.logId.equals(logId))).go();
+      for (final item in items) {
+        await into(locomotives).insert(item.copyWith(logId: Value(logId)));
+      }
+    });
+  }
+
+  /// 读取某条记录的本务机车（一次性查询，非流式）
+  Future<List<Locomotive>> getLocomotives(int logId) {
+    final query = select(locomotives)
+      ..where((l) => l.logId.equals(logId))
+      ..orderBy([(l) => OrderingTerm.asc(l.id)]);
+    return query.get();
   }
 }

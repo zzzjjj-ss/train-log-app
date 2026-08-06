@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../data/database.dart';
+import '../providers/providers.dart';
 
 /// 单条运转记录的卡片组件。
 /// 传入一条 TrainLog，渲染成一站漂亮的卡片。
-class LogCard extends StatelessWidget {
+class LogCard extends ConsumerWidget {
   final TrainLog log;
   final VoidCallback? onTap;
-  final VoidCallback? onDelete;
 
-  const LogCard({super.key, required this.log, this.onTap, this.onDelete});
+  const LogCard({super.key, required this.log, this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final dateStr = DateFormat('yyyy年M月d日').format(log.date);
 
@@ -115,25 +116,30 @@ class LogCard extends StatelessWidget {
                 ],
               ),
               // 第四行：车型信息（车迷重点关注）
-              if (_rollingStockLine(log) != null) ...[
+              if (log.trainKind == '普速机辆' ||
+                  _rollingStockLine(log) != null) ...[
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _InfoChip(icon: Icons.directions_railway, text: _rollingStockLine(log)!),
-                    if (log.maxSpeed != null && log.maxSpeed! > 0) ...[
-                      const SizedBox(width: 8),
-                      _InfoChip(icon: Icons.speed, text: '${log.maxSpeed} km/h'),
+                if (log.trainKind == '普速机辆')
+                  // 本务机车可能多台（换挂/重联），从数据库加载显示
+                  _LocomotiveList(logId: log.id, fallback: _rollingStockLine(log))
+                else
+                  Row(
+                    children: [
+                      _InfoChip(icon: Icons.directions_railway, text: _rollingStockLine(log)!),
+                      if (log.maxSpeed != null && log.maxSpeed! > 0) ...[
+                        const SizedBox(width: 8),
+                        _InfoChip(icon: Icons.speed, text: '${log.maxSpeed} km/h'),
+                      ],
+                      if (log.bureau.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        _InfoChip(icon: Icons.account_balance, text: log.bureau),
+                      ],
+                      if (log.carNumber.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        _InfoChip(icon: Icons.qr_code_2, text: log.carNumber),
+                      ],
                     ],
-                    if (log.bureau.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      _InfoChip(icon: Icons.account_balance, text: log.bureau),
-                    ],
-                    if (log.carNumber.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      _InfoChip(icon: Icons.qr_code_2, text: log.carNumber),
-                    ],
-                  ],
-                ),
+                  ),
               ],
             ],
           ),
@@ -146,9 +152,17 @@ class LogCard extends StatelessWidget {
     final dep = log.departureTime;
     final arr = log.arrivalTime;
     if (dep.isEmpty && arr.isEmpty) return '--:--';
-    if (dep.isEmpty) return '→ $arr';
+    // 跨天行程：到达时间前加"次日/第3天"等标记
+    String arrLabel = arr;
+    if (log.arrivalDayOffset > 0 && arr.isNotEmpty) {
+      const dayNames = ['', '次日', '第3天', '第4天', '第5天'];
+      final offset = log.arrivalDayOffset;
+      final tag = offset < dayNames.length ? dayNames[offset] : '第${offset + 1}天';
+      arrLabel = '$tag $arr';
+    }
+    if (dep.isEmpty) return '→ $arrLabel';
     if (arr.isEmpty) return '$dep →';
-    return '$dep → $arr';
+    return '$dep → $arrLabel';
   }
 
   /// 生成车型信息：动车组/机车 的 型号+编号 智能拼接
@@ -202,6 +216,49 @@ class _InfoChip extends StatelessWidget {
           Text(text, style: theme.textTheme.labelSmall),
         ],
       ),
+    );
+  }
+}
+
+/// 本务机车列表展示（支持多台：换挂/重联）
+class _LocomotiveList extends ConsumerWidget {
+  final int logId;
+  final String? fallback;
+
+  const _LocomotiveList({required this.logId, this.fallback});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final db = ref.read(databaseProvider);
+    return FutureBuilder<List<Locomotive>>(
+      future: db.getLocomotives(logId),
+      builder: (context, snap) {
+        final locos = snap.data;
+        // 旧数据兜底：locomotives 表无记录时用同步的旧字段
+        if (locos == null || locos.isEmpty) {
+          if (fallback == null || fallback!.isEmpty) {
+            return const SizedBox.shrink();
+          }
+          return Row(
+            children: [
+              _InfoChip(icon: Icons.directions_railway, text: fallback!),
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final l in locos)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: _InfoChip(
+                  icon: Icons.directions_railway,
+                  text: l.number.isNotEmpty ? '${l.model}·${l.number}' : l.model,
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

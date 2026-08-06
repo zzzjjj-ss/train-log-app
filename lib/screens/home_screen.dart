@@ -34,13 +34,26 @@ class HomeScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 88),
             children: [
               _StatsSection(logs: logs),
-              ...logs.map(
-                (log) => LogCard(
-                  log: log,
-                  onTap: () => _openEdit(context, log),
-                  onDelete: () => _confirmDelete(context, ref, log),
+              for (final log in logs)
+                // 右滑删除（左→右），confirmDismiss 弹确认框
+                Dismissible(
+                  key: ValueKey(log.id),
+                  direction: DismissDirection.startToEnd,
+                  background: _DismissBackground(),
+                  confirmDismiss: (_) => _confirmDelete(context, ref, log),
+                  onDismissed: (_) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('已删除 ${log.trainNumber}'),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: LogCard(
+                    log: log,
+                    onTap: () => _openEdit(context, log),
+                  ),
                 ),
-              ),
             ],
           );
         },
@@ -61,7 +74,7 @@ class HomeScreen extends ConsumerWidget {
     context.push('/edit', extra: log);
   }
 
-  Future<void> _confirmDelete(
+  Future<bool> _confirmDelete(
       BuildContext context, WidgetRef ref, TrainLog log) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -82,7 +95,36 @@ class HomeScreen extends ConsumerWidget {
     );
     if (confirmed == true) {
       await ref.read(databaseProvider).deleteLog(log.id);
+      return true;
     }
+    return false;
+  }
+}
+
+/// 右滑删除时的背景（红色 + 删除图标）
+class _DismissBackground extends StatelessWidget {
+  const _DismissBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.error,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.only(left: 24),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(Icons.delete, color: Colors.white),
+          SizedBox(width: 8),
+          Text('删除', style: TextStyle(color: Colors.white)),
+        ],
+      ),
+    );
   }
 }
 

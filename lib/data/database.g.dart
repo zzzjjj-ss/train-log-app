@@ -318,6 +318,18 @@ class $TrainLogsTable extends TrainLogs
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _arrivalDayOffsetMeta = const VerificationMeta(
+    'arrivalDayOffset',
+  );
+  @override
+  late final GeneratedColumn<int> arrivalDayOffset = GeneratedColumn<int>(
+    'arrival_day_offset',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -347,6 +359,7 @@ class $TrainLogsTable extends TrainLogs
     emuFormation,
     emuDepot,
     carNumber,
+    arrivalDayOffset,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -560,6 +573,15 @@ class $TrainLogsTable extends TrainLogs
         carNumber.isAcceptableOrUnknown(data['car_number']!, _carNumberMeta),
       );
     }
+    if (data.containsKey('arrival_day_offset')) {
+      context.handle(
+        _arrivalDayOffsetMeta,
+        arrivalDayOffset.isAcceptableOrUnknown(
+          data['arrival_day_offset']!,
+          _arrivalDayOffsetMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -677,6 +699,10 @@ class $TrainLogsTable extends TrainLogs
         DriftSqlType.string,
         data['${effectivePrefix}car_number'],
       )!,
+      arrivalDayOffset: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}arrival_day_offset'],
+      )!,
     );
   }
 
@@ -767,6 +793,9 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
 
   /// 车厢编号，如：ZYS102001（车种代码+编号，v3）
   final String carNumber;
+
+  /// 到达日偏移：0=当天，1=次日，2=第3天（跨天行程，v5）
+  final int arrivalDayOffset;
   const TrainLog({
     required this.id,
     required this.trainNumber,
@@ -795,6 +824,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     required this.emuFormation,
     required this.emuDepot,
     required this.carNumber,
+    required this.arrivalDayOffset,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -832,6 +862,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     map['emu_formation'] = Variable<String>(emuFormation);
     map['emu_depot'] = Variable<String>(emuDepot);
     map['car_number'] = Variable<String>(carNumber);
+    map['arrival_day_offset'] = Variable<int>(arrivalDayOffset);
     return map;
   }
 
@@ -870,6 +901,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       emuFormation: Value(emuFormation),
       emuDepot: Value(emuDepot),
       carNumber: Value(carNumber),
+      arrivalDayOffset: Value(arrivalDayOffset),
     );
   }
 
@@ -906,6 +938,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       emuFormation: serializer.fromJson<String>(json['emuFormation']),
       emuDepot: serializer.fromJson<String>(json['emuDepot']),
       carNumber: serializer.fromJson<String>(json['carNumber']),
+      arrivalDayOffset: serializer.fromJson<int>(json['arrivalDayOffset']),
     );
   }
   @override
@@ -939,6 +972,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       'emuFormation': serializer.toJson<String>(emuFormation),
       'emuDepot': serializer.toJson<String>(emuDepot),
       'carNumber': serializer.toJson<String>(carNumber),
+      'arrivalDayOffset': serializer.toJson<int>(arrivalDayOffset),
     };
   }
 
@@ -970,6 +1004,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     String? emuFormation,
     String? emuDepot,
     String? carNumber,
+    int? arrivalDayOffset,
   }) => TrainLog(
     id: id ?? this.id,
     trainNumber: trainNumber ?? this.trainNumber,
@@ -998,6 +1033,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     emuFormation: emuFormation ?? this.emuFormation,
     emuDepot: emuDepot ?? this.emuDepot,
     carNumber: carNumber ?? this.carNumber,
+    arrivalDayOffset: arrivalDayOffset ?? this.arrivalDayOffset,
   );
   TrainLog copyWithCompanion(TrainLogsCompanion data) {
     return TrainLog(
@@ -1054,6 +1090,9 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           : this.emuFormation,
       emuDepot: data.emuDepot.present ? data.emuDepot.value : this.emuDepot,
       carNumber: data.carNumber.present ? data.carNumber.value : this.carNumber,
+      arrivalDayOffset: data.arrivalDayOffset.present
+          ? data.arrivalDayOffset.value
+          : this.arrivalDayOffset,
     );
   }
 
@@ -1086,7 +1125,8 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           ..write('emuCapacity: $emuCapacity, ')
           ..write('emuFormation: $emuFormation, ')
           ..write('emuDepot: $emuDepot, ')
-          ..write('carNumber: $carNumber')
+          ..write('carNumber: $carNumber, ')
+          ..write('arrivalDayOffset: $arrivalDayOffset')
           ..write(')'))
         .toString();
   }
@@ -1120,6 +1160,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     emuFormation,
     emuDepot,
     carNumber,
+    arrivalDayOffset,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1151,7 +1192,8 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           other.emuCapacity == this.emuCapacity &&
           other.emuFormation == this.emuFormation &&
           other.emuDepot == this.emuDepot &&
-          other.carNumber == this.carNumber);
+          other.carNumber == this.carNumber &&
+          other.arrivalDayOffset == this.arrivalDayOffset);
 }
 
 class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
@@ -1182,6 +1224,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
   final Value<String> emuFormation;
   final Value<String> emuDepot;
   final Value<String> carNumber;
+  final Value<int> arrivalDayOffset;
   const TrainLogsCompanion({
     this.id = const Value.absent(),
     this.trainNumber = const Value.absent(),
@@ -1210,6 +1253,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     this.emuFormation = const Value.absent(),
     this.emuDepot = const Value.absent(),
     this.carNumber = const Value.absent(),
+    this.arrivalDayOffset = const Value.absent(),
   });
   TrainLogsCompanion.insert({
     this.id = const Value.absent(),
@@ -1239,6 +1283,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     this.emuFormation = const Value.absent(),
     this.emuDepot = const Value.absent(),
     this.carNumber = const Value.absent(),
+    this.arrivalDayOffset = const Value.absent(),
   }) : trainNumber = Value(trainNumber),
        departureStation = Value(departureStation),
        arrivalStation = Value(arrivalStation),
@@ -1271,6 +1316,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     Expression<String>? emuFormation,
     Expression<String>? emuDepot,
     Expression<String>? carNumber,
+    Expression<int>? arrivalDayOffset,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1300,6 +1346,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
       if (emuFormation != null) 'emu_formation': emuFormation,
       if (emuDepot != null) 'emu_depot': emuDepot,
       if (carNumber != null) 'car_number': carNumber,
+      if (arrivalDayOffset != null) 'arrival_day_offset': arrivalDayOffset,
     });
   }
 
@@ -1331,6 +1378,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     Value<String>? emuFormation,
     Value<String>? emuDepot,
     Value<String>? carNumber,
+    Value<int>? arrivalDayOffset,
   }) {
     return TrainLogsCompanion(
       id: id ?? this.id,
@@ -1360,6 +1408,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
       emuFormation: emuFormation ?? this.emuFormation,
       emuDepot: emuDepot ?? this.emuDepot,
       carNumber: carNumber ?? this.carNumber,
+      arrivalDayOffset: arrivalDayOffset ?? this.arrivalDayOffset,
     );
   }
 
@@ -1447,6 +1496,9 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     if (carNumber.present) {
       map['car_number'] = Variable<String>(carNumber.value);
     }
+    if (arrivalDayOffset.present) {
+      map['arrival_day_offset'] = Variable<int>(arrivalDayOffset.value);
+    }
     return map;
   }
 
@@ -1479,7 +1531,356 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
           ..write('emuCapacity: $emuCapacity, ')
           ..write('emuFormation: $emuFormation, ')
           ..write('emuDepot: $emuDepot, ')
-          ..write('carNumber: $carNumber')
+          ..write('carNumber: $carNumber, ')
+          ..write('arrivalDayOffset: $arrivalDayOffset')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocomotivesTable extends Locomotives
+    with TableInfo<$LocomotivesTable, Locomotive> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocomotivesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _logIdMeta = const VerificationMeta('logId');
+  @override
+  late final GeneratedColumn<int> logId = GeneratedColumn<int>(
+    'log_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES train_logs (id)',
+    ),
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  @override
+  late final GeneratedColumn<String> number = GeneratedColumn<String>(
+    'number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _factoryMeta = const VerificationMeta(
+    'factory',
+  );
+  @override
+  late final GeneratedColumn<String> factory = GeneratedColumn<String>(
+    'factory',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, logId, model, number, factory];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'locomotives';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Locomotive> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('log_id')) {
+      context.handle(
+        _logIdMeta,
+        logId.isAcceptableOrUnknown(data['log_id']!, _logIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_logIdMeta);
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelMeta);
+    }
+    if (data.containsKey('number')) {
+      context.handle(
+        _numberMeta,
+        number.isAcceptableOrUnknown(data['number']!, _numberMeta),
+      );
+    }
+    if (data.containsKey('factory')) {
+      context.handle(
+        _factoryMeta,
+        factory.isAcceptableOrUnknown(data['factory']!, _factoryMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Locomotive map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Locomotive(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      logId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}log_id'],
+      )!,
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      )!,
+      number: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}number'],
+      )!,
+      factory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}factory'],
+      )!,
+    );
+  }
+
+  @override
+  $LocomotivesTable createAlias(String alias) {
+    return $LocomotivesTable(attachedDatabase, alias);
+  }
+}
+
+class Locomotive extends DataClass implements Insertable<Locomotive> {
+  /// 主键，自增 id
+  final int id;
+
+  /// 所属运转记录 id
+  final int logId;
+
+  /// 机车型号，如：HXD3D、SS9G
+  final String model;
+
+  /// 机车编号，如：HXD3D-0031
+  final String number;
+
+  /// 制造厂，如：大连机车
+  final String factory;
+  const Locomotive({
+    required this.id,
+    required this.logId,
+    required this.model,
+    required this.number,
+    required this.factory,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['log_id'] = Variable<int>(logId);
+    map['model'] = Variable<String>(model);
+    map['number'] = Variable<String>(number);
+    map['factory'] = Variable<String>(factory);
+    return map;
+  }
+
+  LocomotivesCompanion toCompanion(bool nullToAbsent) {
+    return LocomotivesCompanion(
+      id: Value(id),
+      logId: Value(logId),
+      model: Value(model),
+      number: Value(number),
+      factory: Value(factory),
+    );
+  }
+
+  factory Locomotive.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Locomotive(
+      id: serializer.fromJson<int>(json['id']),
+      logId: serializer.fromJson<int>(json['logId']),
+      model: serializer.fromJson<String>(json['model']),
+      number: serializer.fromJson<String>(json['number']),
+      factory: serializer.fromJson<String>(json['factory']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'logId': serializer.toJson<int>(logId),
+      'model': serializer.toJson<String>(model),
+      'number': serializer.toJson<String>(number),
+      'factory': serializer.toJson<String>(factory),
+    };
+  }
+
+  Locomotive copyWith({
+    int? id,
+    int? logId,
+    String? model,
+    String? number,
+    String? factory,
+  }) => Locomotive(
+    id: id ?? this.id,
+    logId: logId ?? this.logId,
+    model: model ?? this.model,
+    number: number ?? this.number,
+    factory: factory ?? this.factory,
+  );
+  Locomotive copyWithCompanion(LocomotivesCompanion data) {
+    return Locomotive(
+      id: data.id.present ? data.id.value : this.id,
+      logId: data.logId.present ? data.logId.value : this.logId,
+      model: data.model.present ? data.model.value : this.model,
+      number: data.number.present ? data.number.value : this.number,
+      factory: data.factory.present ? data.factory.value : this.factory,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Locomotive(')
+          ..write('id: $id, ')
+          ..write('logId: $logId, ')
+          ..write('model: $model, ')
+          ..write('number: $number, ')
+          ..write('factory: $factory')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, logId, model, number, factory);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Locomotive &&
+          other.id == this.id &&
+          other.logId == this.logId &&
+          other.model == this.model &&
+          other.number == this.number &&
+          other.factory == this.factory);
+}
+
+class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
+  final Value<int> id;
+  final Value<int> logId;
+  final Value<String> model;
+  final Value<String> number;
+  final Value<String> factory;
+  const LocomotivesCompanion({
+    this.id = const Value.absent(),
+    this.logId = const Value.absent(),
+    this.model = const Value.absent(),
+    this.number = const Value.absent(),
+    this.factory = const Value.absent(),
+  });
+  LocomotivesCompanion.insert({
+    this.id = const Value.absent(),
+    required int logId,
+    required String model,
+    this.number = const Value.absent(),
+    this.factory = const Value.absent(),
+  }) : logId = Value(logId),
+       model = Value(model);
+  static Insertable<Locomotive> custom({
+    Expression<int>? id,
+    Expression<int>? logId,
+    Expression<String>? model,
+    Expression<String>? number,
+    Expression<String>? factory,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (logId != null) 'log_id': logId,
+      if (model != null) 'model': model,
+      if (number != null) 'number': number,
+      if (factory != null) 'factory': factory,
+    });
+  }
+
+  LocomotivesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? logId,
+    Value<String>? model,
+    Value<String>? number,
+    Value<String>? factory,
+  }) {
+    return LocomotivesCompanion(
+      id: id ?? this.id,
+      logId: logId ?? this.logId,
+      model: model ?? this.model,
+      number: number ?? this.number,
+      factory: factory ?? this.factory,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (logId.present) {
+      map['log_id'] = Variable<int>(logId.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<String>(number.value);
+    }
+    if (factory.present) {
+      map['factory'] = Variable<String>(factory.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocomotivesCompanion(')
+          ..write('id: $id, ')
+          ..write('logId: $logId, ')
+          ..write('model: $model, ')
+          ..write('number: $number, ')
+          ..write('factory: $factory')
           ..write(')'))
         .toString();
   }
@@ -1489,11 +1890,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $TrainLogsTable trainLogs = $TrainLogsTable(this);
+  late final $LocomotivesTable locomotives = $LocomotivesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [trainLogs];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [trainLogs, locomotives];
 }
 
 typedef $$TrainLogsTableCreateCompanionBuilder =
@@ -1525,6 +1927,7 @@ typedef $$TrainLogsTableCreateCompanionBuilder =
       Value<String> emuFormation,
       Value<String> emuDepot,
       Value<String> carNumber,
+      Value<int> arrivalDayOffset,
     });
 typedef $$TrainLogsTableUpdateCompanionBuilder =
     TrainLogsCompanion Function({
@@ -1555,7 +1958,31 @@ typedef $$TrainLogsTableUpdateCompanionBuilder =
       Value<String> emuFormation,
       Value<String> emuDepot,
       Value<String> carNumber,
+      Value<int> arrivalDayOffset,
     });
+
+final class $$TrainLogsTableReferences
+    extends BaseReferences<_$AppDatabase, $TrainLogsTable, TrainLog> {
+  $$TrainLogsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$LocomotivesTable, List<Locomotive>>
+  _locomotivesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.locomotives,
+    aliasName: 'train_logs__id__locomotives__log_id',
+  );
+
+  $$LocomotivesTableProcessedTableManager get locomotivesRefs {
+    final manager = $$LocomotivesTableTableManager(
+      $_db,
+      $_db.locomotives,
+    ).filter((f) => f.logId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_locomotivesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$TrainLogsTableFilterComposer
     extends Composer<_$AppDatabase, $TrainLogsTable> {
@@ -1700,6 +2127,36 @@ class $$TrainLogsTableFilterComposer
     column: $table.carNumber,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<int> get arrivalDayOffset => $composableBuilder(
+    column: $table.arrivalDayOffset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> locomotivesRefs(
+    Expression<bool> Function($$LocomotivesTableFilterComposer f) f,
+  ) {
+    final $$LocomotivesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.locomotives,
+      getReferencedColumn: (t) => t.logId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocomotivesTableFilterComposer(
+            $db: $db,
+            $table: $db.locomotives,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TrainLogsTableOrderingComposer
@@ -1845,6 +2302,11 @@ class $$TrainLogsTableOrderingComposer
     column: $table.carNumber,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get arrivalDayOffset => $composableBuilder(
+    column: $table.arrivalDayOffset,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TrainLogsTableAnnotationComposer
@@ -1962,6 +2424,36 @@ class $$TrainLogsTableAnnotationComposer
 
   GeneratedColumn<String> get carNumber =>
       $composableBuilder(column: $table.carNumber, builder: (column) => column);
+
+  GeneratedColumn<int> get arrivalDayOffset => $composableBuilder(
+    column: $table.arrivalDayOffset,
+    builder: (column) => column,
+  );
+
+  Expression<T> locomotivesRefs<T extends Object>(
+    Expression<T> Function($$LocomotivesTableAnnotationComposer a) f,
+  ) {
+    final $$LocomotivesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.locomotives,
+      getReferencedColumn: (t) => t.logId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocomotivesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.locomotives,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TrainLogsTableTableManager
@@ -1975,9 +2467,9 @@ class $$TrainLogsTableTableManager
           $$TrainLogsTableAnnotationComposer,
           $$TrainLogsTableCreateCompanionBuilder,
           $$TrainLogsTableUpdateCompanionBuilder,
-          (TrainLog, BaseReferences<_$AppDatabase, $TrainLogsTable, TrainLog>),
+          (TrainLog, $$TrainLogsTableReferences),
           TrainLog,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool locomotivesRefs})
         > {
   $$TrainLogsTableTableManager(_$AppDatabase db, $TrainLogsTable table)
     : super(
@@ -2019,6 +2511,7 @@ class $$TrainLogsTableTableManager
                 Value<String> emuFormation = const Value.absent(),
                 Value<String> emuDepot = const Value.absent(),
                 Value<String> carNumber = const Value.absent(),
+                Value<int> arrivalDayOffset = const Value.absent(),
               }) => TrainLogsCompanion(
                 id: id,
                 trainNumber: trainNumber,
@@ -2047,6 +2540,7 @@ class $$TrainLogsTableTableManager
                 emuFormation: emuFormation,
                 emuDepot: emuDepot,
                 carNumber: carNumber,
+                arrivalDayOffset: arrivalDayOffset,
               ),
           createCompanionCallback:
               ({
@@ -2077,6 +2571,7 @@ class $$TrainLogsTableTableManager
                 Value<String> emuFormation = const Value.absent(),
                 Value<String> emuDepot = const Value.absent(),
                 Value<String> carNumber = const Value.absent(),
+                Value<int> arrivalDayOffset = const Value.absent(),
               }) => TrainLogsCompanion.insert(
                 id: id,
                 trainNumber: trainNumber,
@@ -2105,11 +2600,46 @@ class $$TrainLogsTableTableManager
                 emuFormation: emuFormation,
                 emuDepot: emuDepot,
                 carNumber: carNumber,
+                arrivalDayOffset: arrivalDayOffset,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TrainLogsTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({locomotivesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (locomotivesRefs) db.locomotives],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (locomotivesRefs)
+                    await $_getPrefetchedData<
+                      TrainLog,
+                      $TrainLogsTable,
+                      Locomotive
+                    >(
+                      currentTable: table,
+                      referencedTable: $$TrainLogsTableReferences
+                          ._locomotivesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$TrainLogsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).locomotivesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.logId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -2124,9 +2654,320 @@ typedef $$TrainLogsTableProcessedTableManager =
       $$TrainLogsTableAnnotationComposer,
       $$TrainLogsTableCreateCompanionBuilder,
       $$TrainLogsTableUpdateCompanionBuilder,
-      (TrainLog, BaseReferences<_$AppDatabase, $TrainLogsTable, TrainLog>),
+      (TrainLog, $$TrainLogsTableReferences),
       TrainLog,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool locomotivesRefs})
+    >;
+typedef $$LocomotivesTableCreateCompanionBuilder =
+    LocomotivesCompanion Function({
+      Value<int> id,
+      required int logId,
+      required String model,
+      Value<String> number,
+      Value<String> factory,
+    });
+typedef $$LocomotivesTableUpdateCompanionBuilder =
+    LocomotivesCompanion Function({
+      Value<int> id,
+      Value<int> logId,
+      Value<String> model,
+      Value<String> number,
+      Value<String> factory,
+    });
+
+final class $$LocomotivesTableReferences
+    extends BaseReferences<_$AppDatabase, $LocomotivesTable, Locomotive> {
+  $$LocomotivesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $TrainLogsTable _logIdTable(_$AppDatabase db) =>
+      db.trainLogs.createAlias('locomotives__log_id__train_logs__id');
+
+  $$TrainLogsTableProcessedTableManager get logId {
+    final $_column = $_itemColumn<int>('log_id')!;
+
+    final manager = $$TrainLogsTableTableManager(
+      $_db,
+      $_db.trainLogs,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_logIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LocomotivesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocomotivesTable> {
+  $$LocomotivesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get factory => $composableBuilder(
+    column: $table.factory,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TrainLogsTableFilterComposer get logId {
+    final $$TrainLogsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.logId,
+      referencedTable: $db.trainLogs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrainLogsTableFilterComposer(
+            $db: $db,
+            $table: $db.trainLogs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocomotivesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocomotivesTable> {
+  $$LocomotivesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get factory => $composableBuilder(
+    column: $table.factory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TrainLogsTableOrderingComposer get logId {
+    final $$TrainLogsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.logId,
+      referencedTable: $db.trainLogs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrainLogsTableOrderingComposer(
+            $db: $db,
+            $table: $db.trainLogs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocomotivesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocomotivesTable> {
+  $$LocomotivesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<String> get factory =>
+      $composableBuilder(column: $table.factory, builder: (column) => column);
+
+  $$TrainLogsTableAnnotationComposer get logId {
+    final $$TrainLogsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.logId,
+      referencedTable: $db.trainLogs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrainLogsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.trainLogs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocomotivesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocomotivesTable,
+          Locomotive,
+          $$LocomotivesTableFilterComposer,
+          $$LocomotivesTableOrderingComposer,
+          $$LocomotivesTableAnnotationComposer,
+          $$LocomotivesTableCreateCompanionBuilder,
+          $$LocomotivesTableUpdateCompanionBuilder,
+          (Locomotive, $$LocomotivesTableReferences),
+          Locomotive,
+          PrefetchHooks Function({bool logId})
+        > {
+  $$LocomotivesTableTableManager(_$AppDatabase db, $LocomotivesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocomotivesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocomotivesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocomotivesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> logId = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<String> number = const Value.absent(),
+                Value<String> factory = const Value.absent(),
+              }) => LocomotivesCompanion(
+                id: id,
+                logId: logId,
+                model: model,
+                number: number,
+                factory: factory,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int logId,
+                required String model,
+                Value<String> number = const Value.absent(),
+                Value<String> factory = const Value.absent(),
+              }) => LocomotivesCompanion.insert(
+                id: id,
+                logId: logId,
+                model: model,
+                number: number,
+                factory: factory,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LocomotivesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({logId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (logId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.logId,
+                                referencedTable: $$LocomotivesTableReferences
+                                    ._logIdTable(db),
+                                referencedColumn: $$LocomotivesTableReferences
+                                    ._logIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LocomotivesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocomotivesTable,
+      Locomotive,
+      $$LocomotivesTableFilterComposer,
+      $$LocomotivesTableOrderingComposer,
+      $$LocomotivesTableAnnotationComposer,
+      $$LocomotivesTableCreateCompanionBuilder,
+      $$LocomotivesTableUpdateCompanionBuilder,
+      (Locomotive, $$LocomotivesTableReferences),
+      Locomotive,
+      PrefetchHooks Function({bool logId})
     >;
 
 class $AppDatabaseManager {
@@ -2134,4 +2975,6 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$TrainLogsTableTableManager get trainLogs =>
       $$TrainLogsTableTableManager(_db, _db.trainLogs);
+  $$LocomotivesTableTableManager get locomotives =>
+      $$LocomotivesTableTableManager(_db, _db.locomotives);
 }
