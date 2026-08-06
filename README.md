@@ -1,17 +1,87 @@
-# train_log_app
+# 🚄 铁路运转日志 (Train Log)
 
-A new Flutter project.
+> 为**铁路迷/车迷**打造的安卓运转记录应用。不只记"坐了哪趟车"，而是记录**坐到了什么车**——机车车辆本身才是运转日志的灵魂。
 
-## Getting Started
+**当前版本：v0.5 (beta 0.1)**
 
-This project is a starting point for a Flutter application.
+## ✨ 功能特性
 
-A few resources to get you started if this is your first Flutter project:
+### 📋 运转记录
+- 记录车次、日期、出发/到达站、发车/到达时间
+- **跨天行程支持**：`1月2日 7:20 → 1月3日 4:30` 也能完整记录
+- 席别、车厢、座位号、车厢编号（如 `ZYS102001`）、里程、评分、备注
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+### 🚂 机车车辆记录（车迷专属）
+- **列车种类自动识别**：输入 `G/D/C` → 动车组；`K/T/Z/Y/L/纯数字` → 普速机辆
+- **动车组**：型号自动补全（内置 47 种车型库）、编号、编组/定员自动填、配属动车所
+- **本务机车**：支持**多台**（换挂/重联），每台记录型号、编号、制造厂
+- 值乘路局、机务段/车辆段、最高时速、牵引区间
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 🎨 使用体验
+- 主页统计：乘坐次数、累计里程、最爱车次
+- **右滑删除**卡片（需确认）
+- 编辑页**返回自动保存**，底部"保存 / 取消 / 删除"按钮
+- 数据库本地存储（drift / SQLite），离线可用，升级不丢数据
+
+## 🚀 快速开始
+
+### 环境要求
+- Flutter 3.44+
+- Android SDK 36
+
+### 构建
+```bash
+flutter pub get
+flutter analyze              # 静态检查
+flutter test                 # 自动化测试
+flutter build apk --release  # 打包 APK
+```
+
+APK 输出：`build/app/outputs/flutter-apk/app-release.apk`
+
+## 🛠 技术栈
+
+| 技术 | 用途 |
+|------|------|
+| Flutter + Dart | 跨平台 UI 框架 |
+| Riverpod | 状态管理 |
+| drift (SQLite) | 本地数据库 |
+| go_router | 页面导航 |
+| Material 3 | 设计规范 |
+
+## 📁 项目结构
+
+```
+lib/
+├── main.dart                    # 入口
+├── app.dart                     # App 根组件 + 路由
+├── data/
+│   ├── database.dart            # drift 数据库（表定义 + 自愈迁移）
+│   └── emu_models.dart          # 动车组车型库（47 种）
+├── providers/
+│   └── providers.dart           # Riverpod Provider
+├── screens/
+│   ├── home_screen.dart         # 主页（统计 + 列表 + 右滑删除）
+│   └── log_form_screen.dart     # 记录表单（新增 / 编辑 / 删除）
+└── widgets/
+    └── log_card.dart            # 记录卡片（含多台机车显示）
+```
+
+## 📚 数据说明
+- **动车组车型库**：数据来自路路通"高速列车车型信息"公开页面
+  （`http://wap.lltskb.com/shfw/lcxh/index.html`）
+- **定员为常见参考值**：不同批次/配置可能有差异，以实际为准
+- 机车编号、动车组编号等由用户自行记录
+
+## 📦 版本历史
+
+| 版本 | 说明 |
+|------|------|
+| v0.5 (beta 0.1) | 跨天行程、多机车、右滑删除、返回自动保存、车型联动 |
+| v0.4 | 自愈式数据库迁移，修复覆盖安装崩溃 |
+| v0.3 | 车型自动补全、车次自动识别、车厢编号 |
+| v0.2 | 机车/动车组记录字段（路局、段、牵引区间、配属） |
+| v0.1 | 基础运转日志（增删改查 + 统计） |
+
+## ⚠️ 声明
+本项目为铁路迷个人开发的运转记录工具。受版权保护的数据（如时刻表）**不内置**，数据完全由用户自行记录。
