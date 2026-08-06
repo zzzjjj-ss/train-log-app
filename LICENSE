@@ -1,14 +1,5 @@
-# Train Log (Railway Operation Log)
-本软件使用 Mozilla Public License 2.0 (MPL-2.0) 授权。
-
 Copyright (c) 2026 zhang
-
-MPL 2.0 核心约定：
-1. 任何人修改本项目的源文件后，修改部分必须以 MPL-2.0 开源并保留本版权声明（传播性）。
-2. 在项目基础上新增的独立文件，可自行选择其他许可证（包括闭源）。
-3. 使用/分发本项目必须附上本许可证全文。
-
---------------------------------------------------------------------------------
+Licensed under the Mozilla Public License, v. 2.0.
 
 Mozilla Public License Version 2.0
 ==================================
