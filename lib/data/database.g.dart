@@ -306,6 +306,18 @@ class $TrainLogsTable extends TrainLogs
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _carNumberMeta = const VerificationMeta(
+    'carNumber',
+  );
+  @override
+  late final GeneratedColumn<String> carNumber = GeneratedColumn<String>(
+    'car_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -334,6 +346,7 @@ class $TrainLogsTable extends TrainLogs
     emuCapacity,
     emuFormation,
     emuDepot,
+    carNumber,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -541,6 +554,12 @@ class $TrainLogsTable extends TrainLogs
         emuDepot.isAcceptableOrUnknown(data['emu_depot']!, _emuDepotMeta),
       );
     }
+    if (data.containsKey('car_number')) {
+      context.handle(
+        _carNumberMeta,
+        carNumber.isAcceptableOrUnknown(data['car_number']!, _carNumberMeta),
+      );
+    }
     return context;
   }
 
@@ -654,6 +673,10 @@ class $TrainLogsTable extends TrainLogs
         DriftSqlType.string,
         data['${effectivePrefix}emu_depot'],
       )!,
+      carNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}car_number'],
+      )!,
     );
   }
 
@@ -741,6 +764,9 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
 
   /// 配属动车所，如：广州南动车所
   final String emuDepot;
+
+  /// 车厢编号，如：ZYS102001（车种代码+编号，v3）
+  final String carNumber;
   const TrainLog({
     required this.id,
     required this.trainNumber,
@@ -768,6 +794,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     this.emuCapacity,
     required this.emuFormation,
     required this.emuDepot,
+    required this.carNumber,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -804,6 +831,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     }
     map['emu_formation'] = Variable<String>(emuFormation);
     map['emu_depot'] = Variable<String>(emuDepot);
+    map['car_number'] = Variable<String>(carNumber);
     return map;
   }
 
@@ -841,6 +869,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           : Value(emuCapacity),
       emuFormation: Value(emuFormation),
       emuDepot: Value(emuDepot),
+      carNumber: Value(carNumber),
     );
   }
 
@@ -876,6 +905,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       emuCapacity: serializer.fromJson<int?>(json['emuCapacity']),
       emuFormation: serializer.fromJson<String>(json['emuFormation']),
       emuDepot: serializer.fromJson<String>(json['emuDepot']),
+      carNumber: serializer.fromJson<String>(json['carNumber']),
     );
   }
   @override
@@ -908,6 +938,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       'emuCapacity': serializer.toJson<int?>(emuCapacity),
       'emuFormation': serializer.toJson<String>(emuFormation),
       'emuDepot': serializer.toJson<String>(emuDepot),
+      'carNumber': serializer.toJson<String>(carNumber),
     };
   }
 
@@ -938,6 +969,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     Value<int?> emuCapacity = const Value.absent(),
     String? emuFormation,
     String? emuDepot,
+    String? carNumber,
   }) => TrainLog(
     id: id ?? this.id,
     trainNumber: trainNumber ?? this.trainNumber,
@@ -965,6 +997,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     emuCapacity: emuCapacity.present ? emuCapacity.value : this.emuCapacity,
     emuFormation: emuFormation ?? this.emuFormation,
     emuDepot: emuDepot ?? this.emuDepot,
+    carNumber: carNumber ?? this.carNumber,
   );
   TrainLog copyWithCompanion(TrainLogsCompanion data) {
     return TrainLog(
@@ -1020,6 +1053,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           ? data.emuFormation.value
           : this.emuFormation,
       emuDepot: data.emuDepot.present ? data.emuDepot.value : this.emuDepot,
+      carNumber: data.carNumber.present ? data.carNumber.value : this.carNumber,
     );
   }
 
@@ -1051,7 +1085,8 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           ..write('emuNumber: $emuNumber, ')
           ..write('emuCapacity: $emuCapacity, ')
           ..write('emuFormation: $emuFormation, ')
-          ..write('emuDepot: $emuDepot')
+          ..write('emuDepot: $emuDepot, ')
+          ..write('carNumber: $carNumber')
           ..write(')'))
         .toString();
   }
@@ -1084,6 +1119,7 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     emuCapacity,
     emuFormation,
     emuDepot,
+    carNumber,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1114,7 +1150,8 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           other.emuNumber == this.emuNumber &&
           other.emuCapacity == this.emuCapacity &&
           other.emuFormation == this.emuFormation &&
-          other.emuDepot == this.emuDepot);
+          other.emuDepot == this.emuDepot &&
+          other.carNumber == this.carNumber);
 }
 
 class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
@@ -1144,6 +1181,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
   final Value<int?> emuCapacity;
   final Value<String> emuFormation;
   final Value<String> emuDepot;
+  final Value<String> carNumber;
   const TrainLogsCompanion({
     this.id = const Value.absent(),
     this.trainNumber = const Value.absent(),
@@ -1171,6 +1209,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     this.emuCapacity = const Value.absent(),
     this.emuFormation = const Value.absent(),
     this.emuDepot = const Value.absent(),
+    this.carNumber = const Value.absent(),
   });
   TrainLogsCompanion.insert({
     this.id = const Value.absent(),
@@ -1199,6 +1238,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     this.emuCapacity = const Value.absent(),
     this.emuFormation = const Value.absent(),
     this.emuDepot = const Value.absent(),
+    this.carNumber = const Value.absent(),
   }) : trainNumber = Value(trainNumber),
        departureStation = Value(departureStation),
        arrivalStation = Value(arrivalStation),
@@ -1230,6 +1270,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     Expression<int>? emuCapacity,
     Expression<String>? emuFormation,
     Expression<String>? emuDepot,
+    Expression<String>? carNumber,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1258,6 +1299,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
       if (emuCapacity != null) 'emu_capacity': emuCapacity,
       if (emuFormation != null) 'emu_formation': emuFormation,
       if (emuDepot != null) 'emu_depot': emuDepot,
+      if (carNumber != null) 'car_number': carNumber,
     });
   }
 
@@ -1288,6 +1330,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     Value<int?>? emuCapacity,
     Value<String>? emuFormation,
     Value<String>? emuDepot,
+    Value<String>? carNumber,
   }) {
     return TrainLogsCompanion(
       id: id ?? this.id,
@@ -1316,6 +1359,7 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
       emuCapacity: emuCapacity ?? this.emuCapacity,
       emuFormation: emuFormation ?? this.emuFormation,
       emuDepot: emuDepot ?? this.emuDepot,
+      carNumber: carNumber ?? this.carNumber,
     );
   }
 
@@ -1400,6 +1444,9 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     if (emuDepot.present) {
       map['emu_depot'] = Variable<String>(emuDepot.value);
     }
+    if (carNumber.present) {
+      map['car_number'] = Variable<String>(carNumber.value);
+    }
     return map;
   }
 
@@ -1431,7 +1478,8 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
           ..write('emuNumber: $emuNumber, ')
           ..write('emuCapacity: $emuCapacity, ')
           ..write('emuFormation: $emuFormation, ')
-          ..write('emuDepot: $emuDepot')
+          ..write('emuDepot: $emuDepot, ')
+          ..write('carNumber: $carNumber')
           ..write(')'))
         .toString();
   }
@@ -1476,6 +1524,7 @@ typedef $$TrainLogsTableCreateCompanionBuilder =
       Value<int?> emuCapacity,
       Value<String> emuFormation,
       Value<String> emuDepot,
+      Value<String> carNumber,
     });
 typedef $$TrainLogsTableUpdateCompanionBuilder =
     TrainLogsCompanion Function({
@@ -1505,6 +1554,7 @@ typedef $$TrainLogsTableUpdateCompanionBuilder =
       Value<int?> emuCapacity,
       Value<String> emuFormation,
       Value<String> emuDepot,
+      Value<String> carNumber,
     });
 
 class $$TrainLogsTableFilterComposer
@@ -1643,6 +1693,11 @@ class $$TrainLogsTableFilterComposer
 
   ColumnFilters<String> get emuDepot => $composableBuilder(
     column: $table.emuDepot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get carNumber => $composableBuilder(
+    column: $table.carNumber,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1785,6 +1840,11 @@ class $$TrainLogsTableOrderingComposer
     column: $table.emuDepot,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get carNumber => $composableBuilder(
+    column: $table.carNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TrainLogsTableAnnotationComposer
@@ -1899,6 +1959,9 @@ class $$TrainLogsTableAnnotationComposer
 
   GeneratedColumn<String> get emuDepot =>
       $composableBuilder(column: $table.emuDepot, builder: (column) => column);
+
+  GeneratedColumn<String> get carNumber =>
+      $composableBuilder(column: $table.carNumber, builder: (column) => column);
 }
 
 class $$TrainLogsTableTableManager
@@ -1955,6 +2018,7 @@ class $$TrainLogsTableTableManager
                 Value<int?> emuCapacity = const Value.absent(),
                 Value<String> emuFormation = const Value.absent(),
                 Value<String> emuDepot = const Value.absent(),
+                Value<String> carNumber = const Value.absent(),
               }) => TrainLogsCompanion(
                 id: id,
                 trainNumber: trainNumber,
@@ -1982,6 +2046,7 @@ class $$TrainLogsTableTableManager
                 emuCapacity: emuCapacity,
                 emuFormation: emuFormation,
                 emuDepot: emuDepot,
+                carNumber: carNumber,
               ),
           createCompanionCallback:
               ({
@@ -2011,6 +2076,7 @@ class $$TrainLogsTableTableManager
                 Value<int?> emuCapacity = const Value.absent(),
                 Value<String> emuFormation = const Value.absent(),
                 Value<String> emuDepot = const Value.absent(),
+                Value<String> carNumber = const Value.absent(),
               }) => TrainLogsCompanion.insert(
                 id: id,
                 trainNumber: trainNumber,
@@ -2038,6 +2104,7 @@ class $$TrainLogsTableTableManager
                 emuCapacity: emuCapacity,
                 emuFormation: emuFormation,
                 emuDepot: emuDepot,
+                carNumber: carNumber,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

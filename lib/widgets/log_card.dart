@@ -128,6 +128,10 @@ class LogCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       _InfoChip(icon: Icons.account_balance, text: log.bureau),
                     ],
+                    if (log.carNumber.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      _InfoChip(icon: Icons.qr_code_2, text: log.carNumber),
+                    ],
                   ],
                 ),
               ],
@@ -147,15 +151,28 @@ class LogCard extends StatelessWidget {
     return '$dep → $arr';
   }
 
-  /// 生成车型信息：动车组显示动车组编号/型号，普速显示机车型号/编号
+  /// 生成车型信息：动车组/机车 的 型号+编号 智能拼接
+  /// 例：CR400BF + 5033 → CR400BF-5033；CR400BF-5033 → CR400BF-5033（不重复拼）
   String? _rollingStockLine(TrainLog log) {
     if (log.trainKind == '动车组') {
-      return log.emuNumber.isNotEmpty ? log.emuNumber : log.emuModel;
+      final model = log.emuModel.trim();
+      final num = log.emuNumber.trim();
+      if (model.isEmpty && num.isEmpty) return null;
+      if (model.isEmpty) return num;
+      if (num.isEmpty) return model;
+      // 编号已含型号（CR400BF-5033）时不重复拼接
+      final modelPrefix = model.split('-').first;
+      if (num.startsWith(model) || num.startsWith(modelPrefix)) return num;
+      return '$model-$num';
     }
     if (log.trainKind == '普速机辆') {
-      return log.locomotiveNumber.isNotEmpty
-          ? log.locomotiveNumber
-          : log.locomotiveModel;
+      final model = log.locomotiveModel.trim();
+      final num = log.locomotiveNumber.trim();
+      if (model.isEmpty && num.isEmpty) return null;
+      if (model.isEmpty) return num;
+      if (num.isEmpty) return model;
+      if (num.startsWith(model) || num.contains(model)) return num;
+      return '$model-$num';
     }
     return null;
   }

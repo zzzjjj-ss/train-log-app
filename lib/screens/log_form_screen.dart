@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../data/database.dart';
+import '../data/emu_models.dart';
 import '../providers/providers.dart';
 
 /// 常见席别选项（供下拉选择）
@@ -54,6 +55,7 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
   late final TextEditingController _emuCapacity;    // 定员
   late final TextEditingController _emuFormation;   // 编组
   late final TextEditingController _emuDepot;       // 配属
+  late final TextEditingController _carNumber;      // 车厢编号
 
   late String _trainKind; // 列车种类
 
@@ -113,6 +115,7 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _emuCapacity.dispose();
     _emuFormation.dispose();
     _emuDepot.dispose();
+    _carNumber.dispose();
     super.dispose();
   }
 
@@ -145,6 +148,28 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
           _arrivalTime = formatted;
         }
       });
+    }
+  }
+
+  /// 根据车次前缀自动识别列车种类：
+  /// G/D/C → 动车组；K/T/Z/Y/L/S/N/纯数字 → 普速机辆
+  void _autoDetectTrainKind(String value) {
+    final v = value.trim().toUpperCase();
+    if (v.isEmpty) return;
+
+    String? kind;
+    if (v.startsWith('G') || v.startsWith('D') || v.startsWith('C')) {
+      kind = '动车组';
+    } else if (v.startsWith('K') || v.startsWith('T') || v.startsWith('Z') ||
+        v.startsWith('Y') || v.startsWith('L') || v.startsWith('S') ||
+        v.startsWith('N')) {
+      kind = '普速机辆';
+    } else if (RegExp(r'^\d').hasMatch(v)) {
+      kind = '普速机辆'; // 纯数字车次（普通旅客列车）
+    }
+
+    if (kind != null && kind != _trainKind) {
+      setState(() => _trainKind = kind!);
     }
   }
 
@@ -183,6 +208,7 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
       emuCapacity: Value(int.tryParse(_emuCapacity.text.trim())),
       emuFormation: Value(_emuFormation.text.trim()),
       emuDepot: Value(_emuDepot.text.trim()),
+      carNumber: Value(_carNumber.text.trim()),
     );
 
     if (_isEditing) {
@@ -210,9 +236,10 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
             // ---- 车次（必填）----
             TextFormField(
               controller: _trainNumber,
+              onChanged: _autoDetectTrainKind,
               decoration: const InputDecoration(
                 labelText: '车次 *',
-                hintText: '例如 G1234',
+                hintText: '例如 G1234（自动识别动车/普速）',
                 prefixIcon: Icon(Icons.train),
                 border: OutlineInputBorder(),
               ),
@@ -364,15 +391,47 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
               const _SectionTitle(title: '动车组信息'),
               Row(
                 children: [
+                  // 车型自动补全：输入即过滤内置车型库，选中自动填编组/定员
                   Expanded(
-                    child: TextFormField(
-                      controller: _emuModel,
-                      decoration: const InputDecoration(
-                        labelText: '动车组型号',
-                        hintText: '如 CR400BF',
-                        prefixIcon: Icon(Icons.directions_railway),
-                        border: OutlineInputBorder(),
-                      ),
+                    flex: 3,
+                    child: Autocomplete<EmuModel>(
+                      initialValue: TextEditingValue(text: _emuModel.text),
+                      optionsBuilder: (TextEditingValue v) {
+                        if (v.text.isEmpty) return kEmuModels.take(8);
+                        final kw = v.text.trim().toUpperCase();
+                        return kEmuModels
+                            .where((m) =>
+                                m.name.toUpperCase().contains(kw) ||
+                                m.note.contains(kw))
+                            .toList()
+                            .take(8);
+                      },
+                      displayStringForOption: (m) => m.name,
+                      onSelected: (m) {
+                        // 自动补全编组和定员
+                        _emuModel.text = m.name;
+                        if (_emuFormation.text.trim().isEmpty) {
+                          _emuFormation.text = m.formation;
+                        }
+                        if (m.capacity != null &&
+                            _emuCapacity.text.trim().isEmpty) {
+                          _emuCapacity.text = m.capacity.toString();
+                        }
+                        setState(() {});
+                      },
+                      fieldViewBuilder: (context, controller, focusNode,
+                          onFieldSubmitted) {
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: const InputDecoration(
+                            labelText: '动车组型号',
+                            hintText: '如 CR400BF',
+                            prefixIcon: Icon(Icons.directions_railway),
+                            border: OutlineInputBorder(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -516,6 +575,18 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 14),
+
+            // ---- 车厢编号（车种代码+编号，如 ZYS102001）----
+            TextFormField(
+              controller: _carNumber,
+              decoration: const InputDecoration(
+                labelText: '车厢编号',
+                hintText: '如 ZYS102001（车种代码+编号）',
+                prefixIcon: Icon(Icons.qr_code_2),
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 14),
 

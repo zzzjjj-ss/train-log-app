@@ -88,6 +88,9 @@ class TrainLogs extends Table {
 
   /// 配属动车所，如：广州南动车所
   TextColumn get emuDepot => text().withDefault(const Constant(''))();
+
+  /// 车厢编号，如：ZYS102001（车种代码+编号，v3）
+  TextColumn get carNumber => text().withDefault(const Constant(''))();
 }
 
 /// 数据库主体。drift 会根据这里的定义生成 _\$AppDatabase 基类。
@@ -99,7 +102,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'train_log_app'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// 数据库迁移：从旧版本升级时保留已有数据、新增列
   @override
@@ -121,6 +124,10 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(trainLogs, trainLogs.emuCapacity);
         await m.addColumn(trainLogs, trainLogs.emuFormation);
         await m.addColumn(trainLogs, trainLogs.emuDepot);
+      }
+      if (from < 3) {
+        // v2 → v3：新增车厢编号
+        await m.addColumn(trainLogs, trainLogs.carNumber);
       }
     },
   );
