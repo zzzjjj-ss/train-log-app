@@ -155,6 +155,157 @@ class $TrainLogsTable extends TrainLogs
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _trainKindMeta = const VerificationMeta(
+    'trainKind',
+  );
+  @override
+  late final GeneratedColumn<String> trainKind = GeneratedColumn<String>(
+    'train_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('动车组'),
+  );
+  static const VerificationMeta _bureauMeta = const VerificationMeta('bureau');
+  @override
+  late final GeneratedColumn<String> bureau = GeneratedColumn<String>(
+    'bureau',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _depotMeta = const VerificationMeta('depot');
+  @override
+  late final GeneratedColumn<String> depot = GeneratedColumn<String>(
+    'depot',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _maxSpeedMeta = const VerificationMeta(
+    'maxSpeed',
+  );
+  @override
+  late final GeneratedColumn<int> maxSpeed = GeneratedColumn<int>(
+    'max_speed',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _locomotiveModelMeta = const VerificationMeta(
+    'locomotiveModel',
+  );
+  @override
+  late final GeneratedColumn<String> locomotiveModel = GeneratedColumn<String>(
+    'locomotive_model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _locomotiveNumberMeta = const VerificationMeta(
+    'locomotiveNumber',
+  );
+  @override
+  late final GeneratedColumn<String> locomotiveNumber = GeneratedColumn<String>(
+    'locomotive_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _locomotiveFactoryMeta = const VerificationMeta(
+    'locomotiveFactory',
+  );
+  @override
+  late final GeneratedColumn<String> locomotiveFactory =
+      GeneratedColumn<String>(
+        'locomotive_factory',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _haulingSectionMeta = const VerificationMeta(
+    'haulingSection',
+  );
+  @override
+  late final GeneratedColumn<String> haulingSection = GeneratedColumn<String>(
+    'hauling_section',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _emuModelMeta = const VerificationMeta(
+    'emuModel',
+  );
+  @override
+  late final GeneratedColumn<String> emuModel = GeneratedColumn<String>(
+    'emu_model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _emuNumberMeta = const VerificationMeta(
+    'emuNumber',
+  );
+  @override
+  late final GeneratedColumn<String> emuNumber = GeneratedColumn<String>(
+    'emu_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _emuCapacityMeta = const VerificationMeta(
+    'emuCapacity',
+  );
+  @override
+  late final GeneratedColumn<int> emuCapacity = GeneratedColumn<int>(
+    'emu_capacity',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _emuFormationMeta = const VerificationMeta(
+    'emuFormation',
+  );
+  @override
+  late final GeneratedColumn<String> emuFormation = GeneratedColumn<String>(
+    'emu_formation',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _emuDepotMeta = const VerificationMeta(
+    'emuDepot',
+  );
+  @override
+  late final GeneratedColumn<String> emuDepot = GeneratedColumn<String>(
+    'emu_depot',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -170,6 +321,19 @@ class $TrainLogsTable extends TrainLogs
     distanceKm,
     rating,
     notes,
+    trainKind,
+    bureau,
+    depot,
+    maxSpeed,
+    locomotiveModel,
+    locomotiveNumber,
+    locomotiveFactory,
+    haulingSection,
+    emuModel,
+    emuNumber,
+    emuCapacity,
+    emuFormation,
+    emuDepot,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -281,6 +445,102 @@ class $TrainLogsTable extends TrainLogs
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('train_kind')) {
+      context.handle(
+        _trainKindMeta,
+        trainKind.isAcceptableOrUnknown(data['train_kind']!, _trainKindMeta),
+      );
+    }
+    if (data.containsKey('bureau')) {
+      context.handle(
+        _bureauMeta,
+        bureau.isAcceptableOrUnknown(data['bureau']!, _bureauMeta),
+      );
+    }
+    if (data.containsKey('depot')) {
+      context.handle(
+        _depotMeta,
+        depot.isAcceptableOrUnknown(data['depot']!, _depotMeta),
+      );
+    }
+    if (data.containsKey('max_speed')) {
+      context.handle(
+        _maxSpeedMeta,
+        maxSpeed.isAcceptableOrUnknown(data['max_speed']!, _maxSpeedMeta),
+      );
+    }
+    if (data.containsKey('locomotive_model')) {
+      context.handle(
+        _locomotiveModelMeta,
+        locomotiveModel.isAcceptableOrUnknown(
+          data['locomotive_model']!,
+          _locomotiveModelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('locomotive_number')) {
+      context.handle(
+        _locomotiveNumberMeta,
+        locomotiveNumber.isAcceptableOrUnknown(
+          data['locomotive_number']!,
+          _locomotiveNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('locomotive_factory')) {
+      context.handle(
+        _locomotiveFactoryMeta,
+        locomotiveFactory.isAcceptableOrUnknown(
+          data['locomotive_factory']!,
+          _locomotiveFactoryMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hauling_section')) {
+      context.handle(
+        _haulingSectionMeta,
+        haulingSection.isAcceptableOrUnknown(
+          data['hauling_section']!,
+          _haulingSectionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('emu_model')) {
+      context.handle(
+        _emuModelMeta,
+        emuModel.isAcceptableOrUnknown(data['emu_model']!, _emuModelMeta),
+      );
+    }
+    if (data.containsKey('emu_number')) {
+      context.handle(
+        _emuNumberMeta,
+        emuNumber.isAcceptableOrUnknown(data['emu_number']!, _emuNumberMeta),
+      );
+    }
+    if (data.containsKey('emu_capacity')) {
+      context.handle(
+        _emuCapacityMeta,
+        emuCapacity.isAcceptableOrUnknown(
+          data['emu_capacity']!,
+          _emuCapacityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('emu_formation')) {
+      context.handle(
+        _emuFormationMeta,
+        emuFormation.isAcceptableOrUnknown(
+          data['emu_formation']!,
+          _emuFormationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('emu_depot')) {
+      context.handle(
+        _emuDepotMeta,
+        emuDepot.isAcceptableOrUnknown(data['emu_depot']!, _emuDepotMeta),
+      );
+    }
     return context;
   }
 
@@ -342,6 +602,58 @@ class $TrainLogsTable extends TrainLogs
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       )!,
+      trainKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}train_kind'],
+      )!,
+      bureau: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bureau'],
+      )!,
+      depot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}depot'],
+      )!,
+      maxSpeed: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_speed'],
+      ),
+      locomotiveModel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}locomotive_model'],
+      )!,
+      locomotiveNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}locomotive_number'],
+      )!,
+      locomotiveFactory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}locomotive_factory'],
+      )!,
+      haulingSection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hauling_section'],
+      )!,
+      emuModel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}emu_model'],
+      )!,
+      emuNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}emu_number'],
+      )!,
+      emuCapacity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}emu_capacity'],
+      ),
+      emuFormation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}emu_formation'],
+      )!,
+      emuDepot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}emu_depot'],
+      )!,
     );
   }
 
@@ -390,6 +702,45 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
 
   /// 备注/心情
   final String notes;
+
+  /// 列车种类：动车组 / 普速机辆 / 其他
+  final String trainKind;
+
+  /// 值乘路局，如：上海局、北京局
+  final String bureau;
+
+  /// 机务段 / 车辆段，如：上海机务段、广州动车段
+  final String depot;
+
+  /// 最高时速（km/h），可空
+  final int? maxSpeed;
+
+  /// 机车型号，如：HXD3D、SS9G、DF11
+  final String locomotiveModel;
+
+  /// 机车编号，如：HXD3D-0031
+  final String locomotiveNumber;
+
+  /// 机车制造厂，如：大连机车、株洲机车
+  final String locomotiveFactory;
+
+  /// 牵引区间，如：北京—广州
+  final String haulingSection;
+
+  /// 动车组型号，如：CR400BF、CRH380A、CR200J
+  final String emuModel;
+
+  /// 动车组编号，如：CR400BF-5033
+  final String emuNumber;
+
+  /// 定员（人），可空
+  final int? emuCapacity;
+
+  /// 编组数量，如：8、16
+  final String emuFormation;
+
+  /// 配属动车所，如：广州南动车所
+  final String emuDepot;
   const TrainLog({
     required this.id,
     required this.trainNumber,
@@ -404,6 +755,19 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     this.distanceKm,
     required this.rating,
     required this.notes,
+    required this.trainKind,
+    required this.bureau,
+    required this.depot,
+    this.maxSpeed,
+    required this.locomotiveModel,
+    required this.locomotiveNumber,
+    required this.locomotiveFactory,
+    required this.haulingSection,
+    required this.emuModel,
+    required this.emuNumber,
+    this.emuCapacity,
+    required this.emuFormation,
+    required this.emuDepot,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -423,6 +787,23 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     }
     map['rating'] = Variable<int>(rating);
     map['notes'] = Variable<String>(notes);
+    map['train_kind'] = Variable<String>(trainKind);
+    map['bureau'] = Variable<String>(bureau);
+    map['depot'] = Variable<String>(depot);
+    if (!nullToAbsent || maxSpeed != null) {
+      map['max_speed'] = Variable<int>(maxSpeed);
+    }
+    map['locomotive_model'] = Variable<String>(locomotiveModel);
+    map['locomotive_number'] = Variable<String>(locomotiveNumber);
+    map['locomotive_factory'] = Variable<String>(locomotiveFactory);
+    map['hauling_section'] = Variable<String>(haulingSection);
+    map['emu_model'] = Variable<String>(emuModel);
+    map['emu_number'] = Variable<String>(emuNumber);
+    if (!nullToAbsent || emuCapacity != null) {
+      map['emu_capacity'] = Variable<int>(emuCapacity);
+    }
+    map['emu_formation'] = Variable<String>(emuFormation);
+    map['emu_depot'] = Variable<String>(emuDepot);
     return map;
   }
 
@@ -443,6 +824,23 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           : Value(distanceKm),
       rating: Value(rating),
       notes: Value(notes),
+      trainKind: Value(trainKind),
+      bureau: Value(bureau),
+      depot: Value(depot),
+      maxSpeed: maxSpeed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxSpeed),
+      locomotiveModel: Value(locomotiveModel),
+      locomotiveNumber: Value(locomotiveNumber),
+      locomotiveFactory: Value(locomotiveFactory),
+      haulingSection: Value(haulingSection),
+      emuModel: Value(emuModel),
+      emuNumber: Value(emuNumber),
+      emuCapacity: emuCapacity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(emuCapacity),
+      emuFormation: Value(emuFormation),
+      emuDepot: Value(emuDepot),
     );
   }
 
@@ -465,6 +863,19 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       distanceKm: serializer.fromJson<int?>(json['distanceKm']),
       rating: serializer.fromJson<int>(json['rating']),
       notes: serializer.fromJson<String>(json['notes']),
+      trainKind: serializer.fromJson<String>(json['trainKind']),
+      bureau: serializer.fromJson<String>(json['bureau']),
+      depot: serializer.fromJson<String>(json['depot']),
+      maxSpeed: serializer.fromJson<int?>(json['maxSpeed']),
+      locomotiveModel: serializer.fromJson<String>(json['locomotiveModel']),
+      locomotiveNumber: serializer.fromJson<String>(json['locomotiveNumber']),
+      locomotiveFactory: serializer.fromJson<String>(json['locomotiveFactory']),
+      haulingSection: serializer.fromJson<String>(json['haulingSection']),
+      emuModel: serializer.fromJson<String>(json['emuModel']),
+      emuNumber: serializer.fromJson<String>(json['emuNumber']),
+      emuCapacity: serializer.fromJson<int?>(json['emuCapacity']),
+      emuFormation: serializer.fromJson<String>(json['emuFormation']),
+      emuDepot: serializer.fromJson<String>(json['emuDepot']),
     );
   }
   @override
@@ -484,6 +895,19 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       'distanceKm': serializer.toJson<int?>(distanceKm),
       'rating': serializer.toJson<int>(rating),
       'notes': serializer.toJson<String>(notes),
+      'trainKind': serializer.toJson<String>(trainKind),
+      'bureau': serializer.toJson<String>(bureau),
+      'depot': serializer.toJson<String>(depot),
+      'maxSpeed': serializer.toJson<int?>(maxSpeed),
+      'locomotiveModel': serializer.toJson<String>(locomotiveModel),
+      'locomotiveNumber': serializer.toJson<String>(locomotiveNumber),
+      'locomotiveFactory': serializer.toJson<String>(locomotiveFactory),
+      'haulingSection': serializer.toJson<String>(haulingSection),
+      'emuModel': serializer.toJson<String>(emuModel),
+      'emuNumber': serializer.toJson<String>(emuNumber),
+      'emuCapacity': serializer.toJson<int?>(emuCapacity),
+      'emuFormation': serializer.toJson<String>(emuFormation),
+      'emuDepot': serializer.toJson<String>(emuDepot),
     };
   }
 
@@ -501,6 +925,19 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     Value<int?> distanceKm = const Value.absent(),
     int? rating,
     String? notes,
+    String? trainKind,
+    String? bureau,
+    String? depot,
+    Value<int?> maxSpeed = const Value.absent(),
+    String? locomotiveModel,
+    String? locomotiveNumber,
+    String? locomotiveFactory,
+    String? haulingSection,
+    String? emuModel,
+    String? emuNumber,
+    Value<int?> emuCapacity = const Value.absent(),
+    String? emuFormation,
+    String? emuDepot,
   }) => TrainLog(
     id: id ?? this.id,
     trainNumber: trainNumber ?? this.trainNumber,
@@ -515,6 +952,19 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     distanceKm: distanceKm.present ? distanceKm.value : this.distanceKm,
     rating: rating ?? this.rating,
     notes: notes ?? this.notes,
+    trainKind: trainKind ?? this.trainKind,
+    bureau: bureau ?? this.bureau,
+    depot: depot ?? this.depot,
+    maxSpeed: maxSpeed.present ? maxSpeed.value : this.maxSpeed,
+    locomotiveModel: locomotiveModel ?? this.locomotiveModel,
+    locomotiveNumber: locomotiveNumber ?? this.locomotiveNumber,
+    locomotiveFactory: locomotiveFactory ?? this.locomotiveFactory,
+    haulingSection: haulingSection ?? this.haulingSection,
+    emuModel: emuModel ?? this.emuModel,
+    emuNumber: emuNumber ?? this.emuNumber,
+    emuCapacity: emuCapacity.present ? emuCapacity.value : this.emuCapacity,
+    emuFormation: emuFormation ?? this.emuFormation,
+    emuDepot: emuDepot ?? this.emuDepot,
   );
   TrainLog copyWithCompanion(TrainLogsCompanion data) {
     return TrainLog(
@@ -545,6 +995,31 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           : this.distanceKm,
       rating: data.rating.present ? data.rating.value : this.rating,
       notes: data.notes.present ? data.notes.value : this.notes,
+      trainKind: data.trainKind.present ? data.trainKind.value : this.trainKind,
+      bureau: data.bureau.present ? data.bureau.value : this.bureau,
+      depot: data.depot.present ? data.depot.value : this.depot,
+      maxSpeed: data.maxSpeed.present ? data.maxSpeed.value : this.maxSpeed,
+      locomotiveModel: data.locomotiveModel.present
+          ? data.locomotiveModel.value
+          : this.locomotiveModel,
+      locomotiveNumber: data.locomotiveNumber.present
+          ? data.locomotiveNumber.value
+          : this.locomotiveNumber,
+      locomotiveFactory: data.locomotiveFactory.present
+          ? data.locomotiveFactory.value
+          : this.locomotiveFactory,
+      haulingSection: data.haulingSection.present
+          ? data.haulingSection.value
+          : this.haulingSection,
+      emuModel: data.emuModel.present ? data.emuModel.value : this.emuModel,
+      emuNumber: data.emuNumber.present ? data.emuNumber.value : this.emuNumber,
+      emuCapacity: data.emuCapacity.present
+          ? data.emuCapacity.value
+          : this.emuCapacity,
+      emuFormation: data.emuFormation.present
+          ? data.emuFormation.value
+          : this.emuFormation,
+      emuDepot: data.emuDepot.present ? data.emuDepot.value : this.emuDepot,
     );
   }
 
@@ -563,13 +1038,26 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           ..write('seatNumber: $seatNumber, ')
           ..write('distanceKm: $distanceKm, ')
           ..write('rating: $rating, ')
-          ..write('notes: $notes')
+          ..write('notes: $notes, ')
+          ..write('trainKind: $trainKind, ')
+          ..write('bureau: $bureau, ')
+          ..write('depot: $depot, ')
+          ..write('maxSpeed: $maxSpeed, ')
+          ..write('locomotiveModel: $locomotiveModel, ')
+          ..write('locomotiveNumber: $locomotiveNumber, ')
+          ..write('locomotiveFactory: $locomotiveFactory, ')
+          ..write('haulingSection: $haulingSection, ')
+          ..write('emuModel: $emuModel, ')
+          ..write('emuNumber: $emuNumber, ')
+          ..write('emuCapacity: $emuCapacity, ')
+          ..write('emuFormation: $emuFormation, ')
+          ..write('emuDepot: $emuDepot')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     trainNumber,
     departureStation,
@@ -583,7 +1071,20 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     distanceKm,
     rating,
     notes,
-  );
+    trainKind,
+    bureau,
+    depot,
+    maxSpeed,
+    locomotiveModel,
+    locomotiveNumber,
+    locomotiveFactory,
+    haulingSection,
+    emuModel,
+    emuNumber,
+    emuCapacity,
+    emuFormation,
+    emuDepot,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -600,7 +1101,20 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           other.seatNumber == this.seatNumber &&
           other.distanceKm == this.distanceKm &&
           other.rating == this.rating &&
-          other.notes == this.notes);
+          other.notes == this.notes &&
+          other.trainKind == this.trainKind &&
+          other.bureau == this.bureau &&
+          other.depot == this.depot &&
+          other.maxSpeed == this.maxSpeed &&
+          other.locomotiveModel == this.locomotiveModel &&
+          other.locomotiveNumber == this.locomotiveNumber &&
+          other.locomotiveFactory == this.locomotiveFactory &&
+          other.haulingSection == this.haulingSection &&
+          other.emuModel == this.emuModel &&
+          other.emuNumber == this.emuNumber &&
+          other.emuCapacity == this.emuCapacity &&
+          other.emuFormation == this.emuFormation &&
+          other.emuDepot == this.emuDepot);
 }
 
 class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
@@ -617,6 +1131,19 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
   final Value<int?> distanceKm;
   final Value<int> rating;
   final Value<String> notes;
+  final Value<String> trainKind;
+  final Value<String> bureau;
+  final Value<String> depot;
+  final Value<int?> maxSpeed;
+  final Value<String> locomotiveModel;
+  final Value<String> locomotiveNumber;
+  final Value<String> locomotiveFactory;
+  final Value<String> haulingSection;
+  final Value<String> emuModel;
+  final Value<String> emuNumber;
+  final Value<int?> emuCapacity;
+  final Value<String> emuFormation;
+  final Value<String> emuDepot;
   const TrainLogsCompanion({
     this.id = const Value.absent(),
     this.trainNumber = const Value.absent(),
@@ -631,6 +1158,19 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     this.distanceKm = const Value.absent(),
     this.rating = const Value.absent(),
     this.notes = const Value.absent(),
+    this.trainKind = const Value.absent(),
+    this.bureau = const Value.absent(),
+    this.depot = const Value.absent(),
+    this.maxSpeed = const Value.absent(),
+    this.locomotiveModel = const Value.absent(),
+    this.locomotiveNumber = const Value.absent(),
+    this.locomotiveFactory = const Value.absent(),
+    this.haulingSection = const Value.absent(),
+    this.emuModel = const Value.absent(),
+    this.emuNumber = const Value.absent(),
+    this.emuCapacity = const Value.absent(),
+    this.emuFormation = const Value.absent(),
+    this.emuDepot = const Value.absent(),
   });
   TrainLogsCompanion.insert({
     this.id = const Value.absent(),
@@ -646,6 +1186,19 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     this.distanceKm = const Value.absent(),
     this.rating = const Value.absent(),
     this.notes = const Value.absent(),
+    this.trainKind = const Value.absent(),
+    this.bureau = const Value.absent(),
+    this.depot = const Value.absent(),
+    this.maxSpeed = const Value.absent(),
+    this.locomotiveModel = const Value.absent(),
+    this.locomotiveNumber = const Value.absent(),
+    this.locomotiveFactory = const Value.absent(),
+    this.haulingSection = const Value.absent(),
+    this.emuModel = const Value.absent(),
+    this.emuNumber = const Value.absent(),
+    this.emuCapacity = const Value.absent(),
+    this.emuFormation = const Value.absent(),
+    this.emuDepot = const Value.absent(),
   }) : trainNumber = Value(trainNumber),
        departureStation = Value(departureStation),
        arrivalStation = Value(arrivalStation),
@@ -664,6 +1217,19 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     Expression<int>? distanceKm,
     Expression<int>? rating,
     Expression<String>? notes,
+    Expression<String>? trainKind,
+    Expression<String>? bureau,
+    Expression<String>? depot,
+    Expression<int>? maxSpeed,
+    Expression<String>? locomotiveModel,
+    Expression<String>? locomotiveNumber,
+    Expression<String>? locomotiveFactory,
+    Expression<String>? haulingSection,
+    Expression<String>? emuModel,
+    Expression<String>? emuNumber,
+    Expression<int>? emuCapacity,
+    Expression<String>? emuFormation,
+    Expression<String>? emuDepot,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -679,6 +1245,19 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
       if (distanceKm != null) 'distance_km': distanceKm,
       if (rating != null) 'rating': rating,
       if (notes != null) 'notes': notes,
+      if (trainKind != null) 'train_kind': trainKind,
+      if (bureau != null) 'bureau': bureau,
+      if (depot != null) 'depot': depot,
+      if (maxSpeed != null) 'max_speed': maxSpeed,
+      if (locomotiveModel != null) 'locomotive_model': locomotiveModel,
+      if (locomotiveNumber != null) 'locomotive_number': locomotiveNumber,
+      if (locomotiveFactory != null) 'locomotive_factory': locomotiveFactory,
+      if (haulingSection != null) 'hauling_section': haulingSection,
+      if (emuModel != null) 'emu_model': emuModel,
+      if (emuNumber != null) 'emu_number': emuNumber,
+      if (emuCapacity != null) 'emu_capacity': emuCapacity,
+      if (emuFormation != null) 'emu_formation': emuFormation,
+      if (emuDepot != null) 'emu_depot': emuDepot,
     });
   }
 
@@ -696,6 +1275,19 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     Value<int?>? distanceKm,
     Value<int>? rating,
     Value<String>? notes,
+    Value<String>? trainKind,
+    Value<String>? bureau,
+    Value<String>? depot,
+    Value<int?>? maxSpeed,
+    Value<String>? locomotiveModel,
+    Value<String>? locomotiveNumber,
+    Value<String>? locomotiveFactory,
+    Value<String>? haulingSection,
+    Value<String>? emuModel,
+    Value<String>? emuNumber,
+    Value<int?>? emuCapacity,
+    Value<String>? emuFormation,
+    Value<String>? emuDepot,
   }) {
     return TrainLogsCompanion(
       id: id ?? this.id,
@@ -711,6 +1303,19 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
       distanceKm: distanceKm ?? this.distanceKm,
       rating: rating ?? this.rating,
       notes: notes ?? this.notes,
+      trainKind: trainKind ?? this.trainKind,
+      bureau: bureau ?? this.bureau,
+      depot: depot ?? this.depot,
+      maxSpeed: maxSpeed ?? this.maxSpeed,
+      locomotiveModel: locomotiveModel ?? this.locomotiveModel,
+      locomotiveNumber: locomotiveNumber ?? this.locomotiveNumber,
+      locomotiveFactory: locomotiveFactory ?? this.locomotiveFactory,
+      haulingSection: haulingSection ?? this.haulingSection,
+      emuModel: emuModel ?? this.emuModel,
+      emuNumber: emuNumber ?? this.emuNumber,
+      emuCapacity: emuCapacity ?? this.emuCapacity,
+      emuFormation: emuFormation ?? this.emuFormation,
+      emuDepot: emuDepot ?? this.emuDepot,
     );
   }
 
@@ -756,6 +1361,45 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (trainKind.present) {
+      map['train_kind'] = Variable<String>(trainKind.value);
+    }
+    if (bureau.present) {
+      map['bureau'] = Variable<String>(bureau.value);
+    }
+    if (depot.present) {
+      map['depot'] = Variable<String>(depot.value);
+    }
+    if (maxSpeed.present) {
+      map['max_speed'] = Variable<int>(maxSpeed.value);
+    }
+    if (locomotiveModel.present) {
+      map['locomotive_model'] = Variable<String>(locomotiveModel.value);
+    }
+    if (locomotiveNumber.present) {
+      map['locomotive_number'] = Variable<String>(locomotiveNumber.value);
+    }
+    if (locomotiveFactory.present) {
+      map['locomotive_factory'] = Variable<String>(locomotiveFactory.value);
+    }
+    if (haulingSection.present) {
+      map['hauling_section'] = Variable<String>(haulingSection.value);
+    }
+    if (emuModel.present) {
+      map['emu_model'] = Variable<String>(emuModel.value);
+    }
+    if (emuNumber.present) {
+      map['emu_number'] = Variable<String>(emuNumber.value);
+    }
+    if (emuCapacity.present) {
+      map['emu_capacity'] = Variable<int>(emuCapacity.value);
+    }
+    if (emuFormation.present) {
+      map['emu_formation'] = Variable<String>(emuFormation.value);
+    }
+    if (emuDepot.present) {
+      map['emu_depot'] = Variable<String>(emuDepot.value);
+    }
     return map;
   }
 
@@ -774,7 +1418,20 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
           ..write('seatNumber: $seatNumber, ')
           ..write('distanceKm: $distanceKm, ')
           ..write('rating: $rating, ')
-          ..write('notes: $notes')
+          ..write('notes: $notes, ')
+          ..write('trainKind: $trainKind, ')
+          ..write('bureau: $bureau, ')
+          ..write('depot: $depot, ')
+          ..write('maxSpeed: $maxSpeed, ')
+          ..write('locomotiveModel: $locomotiveModel, ')
+          ..write('locomotiveNumber: $locomotiveNumber, ')
+          ..write('locomotiveFactory: $locomotiveFactory, ')
+          ..write('haulingSection: $haulingSection, ')
+          ..write('emuModel: $emuModel, ')
+          ..write('emuNumber: $emuNumber, ')
+          ..write('emuCapacity: $emuCapacity, ')
+          ..write('emuFormation: $emuFormation, ')
+          ..write('emuDepot: $emuDepot')
           ..write(')'))
         .toString();
   }
@@ -806,6 +1463,19 @@ typedef $$TrainLogsTableCreateCompanionBuilder =
       Value<int?> distanceKm,
       Value<int> rating,
       Value<String> notes,
+      Value<String> trainKind,
+      Value<String> bureau,
+      Value<String> depot,
+      Value<int?> maxSpeed,
+      Value<String> locomotiveModel,
+      Value<String> locomotiveNumber,
+      Value<String> locomotiveFactory,
+      Value<String> haulingSection,
+      Value<String> emuModel,
+      Value<String> emuNumber,
+      Value<int?> emuCapacity,
+      Value<String> emuFormation,
+      Value<String> emuDepot,
     });
 typedef $$TrainLogsTableUpdateCompanionBuilder =
     TrainLogsCompanion Function({
@@ -822,6 +1492,19 @@ typedef $$TrainLogsTableUpdateCompanionBuilder =
       Value<int?> distanceKm,
       Value<int> rating,
       Value<String> notes,
+      Value<String> trainKind,
+      Value<String> bureau,
+      Value<String> depot,
+      Value<int?> maxSpeed,
+      Value<String> locomotiveModel,
+      Value<String> locomotiveNumber,
+      Value<String> locomotiveFactory,
+      Value<String> haulingSection,
+      Value<String> emuModel,
+      Value<String> emuNumber,
+      Value<int?> emuCapacity,
+      Value<String> emuFormation,
+      Value<String> emuDepot,
     });
 
 class $$TrainLogsTableFilterComposer
@@ -895,6 +1578,71 @@ class $$TrainLogsTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get trainKind => $composableBuilder(
+    column: $table.trainKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bureau => $composableBuilder(
+    column: $table.bureau,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get depot => $composableBuilder(
+    column: $table.depot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxSpeed => $composableBuilder(
+    column: $table.maxSpeed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locomotiveModel => $composableBuilder(
+    column: $table.locomotiveModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locomotiveNumber => $composableBuilder(
+    column: $table.locomotiveNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locomotiveFactory => $composableBuilder(
+    column: $table.locomotiveFactory,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get haulingSection => $composableBuilder(
+    column: $table.haulingSection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get emuModel => $composableBuilder(
+    column: $table.emuModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get emuNumber => $composableBuilder(
+    column: $table.emuNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get emuCapacity => $composableBuilder(
+    column: $table.emuCapacity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get emuFormation => $composableBuilder(
+    column: $table.emuFormation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get emuDepot => $composableBuilder(
+    column: $table.emuDepot,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -972,6 +1720,71 @@ class $$TrainLogsTableOrderingComposer
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get trainKind => $composableBuilder(
+    column: $table.trainKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bureau => $composableBuilder(
+    column: $table.bureau,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get depot => $composableBuilder(
+    column: $table.depot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get maxSpeed => $composableBuilder(
+    column: $table.maxSpeed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locomotiveModel => $composableBuilder(
+    column: $table.locomotiveModel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locomotiveNumber => $composableBuilder(
+    column: $table.locomotiveNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locomotiveFactory => $composableBuilder(
+    column: $table.locomotiveFactory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get haulingSection => $composableBuilder(
+    column: $table.haulingSection,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get emuModel => $composableBuilder(
+    column: $table.emuModel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get emuNumber => $composableBuilder(
+    column: $table.emuNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get emuCapacity => $composableBuilder(
+    column: $table.emuCapacity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get emuFormation => $composableBuilder(
+    column: $table.emuFormation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get emuDepot => $composableBuilder(
+    column: $table.emuDepot,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TrainLogsTableAnnotationComposer
@@ -1035,6 +1848,57 @@ class $$TrainLogsTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get trainKind =>
+      $composableBuilder(column: $table.trainKind, builder: (column) => column);
+
+  GeneratedColumn<String> get bureau =>
+      $composableBuilder(column: $table.bureau, builder: (column) => column);
+
+  GeneratedColumn<String> get depot =>
+      $composableBuilder(column: $table.depot, builder: (column) => column);
+
+  GeneratedColumn<int> get maxSpeed =>
+      $composableBuilder(column: $table.maxSpeed, builder: (column) => column);
+
+  GeneratedColumn<String> get locomotiveModel => $composableBuilder(
+    column: $table.locomotiveModel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get locomotiveNumber => $composableBuilder(
+    column: $table.locomotiveNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get locomotiveFactory => $composableBuilder(
+    column: $table.locomotiveFactory,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get haulingSection => $composableBuilder(
+    column: $table.haulingSection,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get emuModel =>
+      $composableBuilder(column: $table.emuModel, builder: (column) => column);
+
+  GeneratedColumn<String> get emuNumber =>
+      $composableBuilder(column: $table.emuNumber, builder: (column) => column);
+
+  GeneratedColumn<int> get emuCapacity => $composableBuilder(
+    column: $table.emuCapacity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get emuFormation => $composableBuilder(
+    column: $table.emuFormation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get emuDepot =>
+      $composableBuilder(column: $table.emuDepot, builder: (column) => column);
 }
 
 class $$TrainLogsTableTableManager
@@ -1078,6 +1942,19 @@ class $$TrainLogsTableTableManager
                 Value<int?> distanceKm = const Value.absent(),
                 Value<int> rating = const Value.absent(),
                 Value<String> notes = const Value.absent(),
+                Value<String> trainKind = const Value.absent(),
+                Value<String> bureau = const Value.absent(),
+                Value<String> depot = const Value.absent(),
+                Value<int?> maxSpeed = const Value.absent(),
+                Value<String> locomotiveModel = const Value.absent(),
+                Value<String> locomotiveNumber = const Value.absent(),
+                Value<String> locomotiveFactory = const Value.absent(),
+                Value<String> haulingSection = const Value.absent(),
+                Value<String> emuModel = const Value.absent(),
+                Value<String> emuNumber = const Value.absent(),
+                Value<int?> emuCapacity = const Value.absent(),
+                Value<String> emuFormation = const Value.absent(),
+                Value<String> emuDepot = const Value.absent(),
               }) => TrainLogsCompanion(
                 id: id,
                 trainNumber: trainNumber,
@@ -1092,6 +1969,19 @@ class $$TrainLogsTableTableManager
                 distanceKm: distanceKm,
                 rating: rating,
                 notes: notes,
+                trainKind: trainKind,
+                bureau: bureau,
+                depot: depot,
+                maxSpeed: maxSpeed,
+                locomotiveModel: locomotiveModel,
+                locomotiveNumber: locomotiveNumber,
+                locomotiveFactory: locomotiveFactory,
+                haulingSection: haulingSection,
+                emuModel: emuModel,
+                emuNumber: emuNumber,
+                emuCapacity: emuCapacity,
+                emuFormation: emuFormation,
+                emuDepot: emuDepot,
               ),
           createCompanionCallback:
               ({
@@ -1108,6 +1998,19 @@ class $$TrainLogsTableTableManager
                 Value<int?> distanceKm = const Value.absent(),
                 Value<int> rating = const Value.absent(),
                 Value<String> notes = const Value.absent(),
+                Value<String> trainKind = const Value.absent(),
+                Value<String> bureau = const Value.absent(),
+                Value<String> depot = const Value.absent(),
+                Value<int?> maxSpeed = const Value.absent(),
+                Value<String> locomotiveModel = const Value.absent(),
+                Value<String> locomotiveNumber = const Value.absent(),
+                Value<String> locomotiveFactory = const Value.absent(),
+                Value<String> haulingSection = const Value.absent(),
+                Value<String> emuModel = const Value.absent(),
+                Value<String> emuNumber = const Value.absent(),
+                Value<int?> emuCapacity = const Value.absent(),
+                Value<String> emuFormation = const Value.absent(),
+                Value<String> emuDepot = const Value.absent(),
               }) => TrainLogsCompanion.insert(
                 id: id,
                 trainNumber: trainNumber,
@@ -1122,6 +2025,19 @@ class $$TrainLogsTableTableManager
                 distanceKm: distanceKm,
                 rating: rating,
                 notes: notes,
+                trainKind: trainKind,
+                bureau: bureau,
+                depot: depot,
+                maxSpeed: maxSpeed,
+                locomotiveModel: locomotiveModel,
+                locomotiveNumber: locomotiveNumber,
+                locomotiveFactory: locomotiveFactory,
+                haulingSection: haulingSection,
+                emuModel: emuModel,
+                emuNumber: emuNumber,
+                emuCapacity: emuCapacity,
+                emuFormation: emuFormation,
+                emuDepot: emuDepot,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -43,6 +43,51 @@ class TrainLogs extends Table {
 
   /// 备注/心情
   TextColumn get notes => text().withDefault(const Constant(''))();
+
+  // ============ 车迷扩展字段（v2） ============
+
+  /// 列车种类：动车组 / 普速机辆 / 其他
+  TextColumn get trainKind => text().withDefault(const Constant('动车组'))();
+
+  /// 值乘路局，如：上海局、北京局
+  TextColumn get bureau => text().withDefault(const Constant(''))();
+
+  /// 机务段 / 车辆段，如：上海机务段、广州动车段
+  TextColumn get depot => text().withDefault(const Constant(''))();
+
+  /// 最高时速（km/h），可空
+  IntColumn get maxSpeed => integer().nullable()();
+
+  // ---- 普速机辆模式：本务机车信息 ----
+
+  /// 机车型号，如：HXD3D、SS9G、DF11
+  TextColumn get locomotiveModel => text().withDefault(const Constant(''))();
+
+  /// 机车编号，如：HXD3D-0031
+  TextColumn get locomotiveNumber => text().withDefault(const Constant(''))();
+
+  /// 机车制造厂，如：大连机车、株洲机车
+  TextColumn get locomotiveFactory => text().withDefault(const Constant(''))();
+
+  /// 牵引区间，如：北京—广州
+  TextColumn get haulingSection => text().withDefault(const Constant(''))();
+
+  // ---- 动车组模式：动车组信息 ----
+
+  /// 动车组型号，如：CR400BF、CRH380A、CR200J
+  TextColumn get emuModel => text().withDefault(const Constant(''))();
+
+  /// 动车组编号，如：CR400BF-5033
+  TextColumn get emuNumber => text().withDefault(const Constant(''))();
+
+  /// 定员（人），可空
+  IntColumn get emuCapacity => integer().nullable()();
+
+  /// 编组数量，如：8、16
+  TextColumn get emuFormation => text().withDefault(const Constant(''))();
+
+  /// 配属动车所，如：广州南动车所
+  TextColumn get emuDepot => text().withDefault(const Constant(''))();
 }
 
 /// 数据库主体。drift 会根据这里的定义生成 _\$AppDatabase 基类。
@@ -54,7 +99,31 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'train_log_app'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  /// 数据库迁移：从旧版本升级时保留已有数据、新增列
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        // v1 → v2：新增车迷扩展字段
+        await m.addColumn(trainLogs, trainLogs.trainKind);
+        await m.addColumn(trainLogs, trainLogs.bureau);
+        await m.addColumn(trainLogs, trainLogs.depot);
+        await m.addColumn(trainLogs, trainLogs.maxSpeed);
+        await m.addColumn(trainLogs, trainLogs.locomotiveModel);
+        await m.addColumn(trainLogs, trainLogs.locomotiveNumber);
+        await m.addColumn(trainLogs, trainLogs.locomotiveFactory);
+        await m.addColumn(trainLogs, trainLogs.haulingSection);
+        await m.addColumn(trainLogs, trainLogs.emuModel);
+        await m.addColumn(trainLogs, trainLogs.emuNumber);
+        await m.addColumn(trainLogs, trainLogs.emuCapacity);
+        await m.addColumn(trainLogs, trainLogs.emuFormation);
+        await m.addColumn(trainLogs, trainLogs.emuDepot);
+      }
+    },
+  );
 
   /// 监听所有记录（按日期倒序，最新在前）
   /// 返回 Stream：数据库变化时，界面会自动刷新（这就是"响应式"）

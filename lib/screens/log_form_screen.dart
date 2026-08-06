@@ -41,6 +41,22 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
   late String _seatClass;
   late int _rating;
 
+  // ===== 车迷扩展字段（v2） =====
+  late final TextEditingController _bureau;          // 路局
+  late final TextEditingController _depot;           // 段
+  late final TextEditingController _maxSpeed;        // 最高时速
+  late final TextEditingController _locomotiveModel; // 机车型号
+  late final TextEditingController _locomotiveNumber; // 机车编号
+  late final TextEditingController _locomotiveFactory; // 制造厂
+  late final TextEditingController _haulingSection; // 牵引区间
+  late final TextEditingController _emuModel;       // 动车组型号
+  late final TextEditingController _emuNumber;      // 动车组编号
+  late final TextEditingController _emuCapacity;    // 定员
+  late final TextEditingController _emuFormation;   // 编组
+  late final TextEditingController _emuDepot;       // 配属
+
+  late String _trainKind; // 列车种类
+
   bool get _isEditing => widget.editing != null;
 
   @override
@@ -59,6 +75,21 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _arrivalTime = e?.arrivalTime ?? '';
     _seatClass = e?.seatClass ?? '二等座';
     _rating = e?.rating ?? 5;
+
+    // ===== v2 字段初始化 =====
+    _trainKind = e?.trainKind ?? '动车组';
+    _bureau = TextEditingController(text: e?.bureau ?? '');
+    _depot = TextEditingController(text: e?.depot ?? '');
+    _maxSpeed = TextEditingController(text: e?.maxSpeed?.toString() ?? '');
+    _locomotiveModel = TextEditingController(text: e?.locomotiveModel ?? '');
+    _locomotiveNumber = TextEditingController(text: e?.locomotiveNumber ?? '');
+    _locomotiveFactory = TextEditingController(text: e?.locomotiveFactory ?? '');
+    _haulingSection = TextEditingController(text: e?.haulingSection ?? '');
+    _emuModel = TextEditingController(text: e?.emuModel ?? '');
+    _emuNumber = TextEditingController(text: e?.emuNumber ?? '');
+    _emuCapacity = TextEditingController(text: e?.emuCapacity?.toString() ?? '');
+    _emuFormation = TextEditingController(text: e?.emuFormation ?? '');
+    _emuDepot = TextEditingController(text: e?.emuDepot ?? '');
   }
 
   @override
@@ -70,6 +101,18 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _seatNumber.dispose();
     _distance.dispose();
     _notes.dispose();
+    _bureau.dispose();
+    _depot.dispose();
+    _maxSpeed.dispose();
+    _locomotiveModel.dispose();
+    _locomotiveNumber.dispose();
+    _locomotiveFactory.dispose();
+    _haulingSection.dispose();
+    _emuModel.dispose();
+    _emuNumber.dispose();
+    _emuCapacity.dispose();
+    _emuFormation.dispose();
+    _emuDepot.dispose();
     super.dispose();
   }
 
@@ -126,6 +169,20 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
       distanceKm: Value(int.tryParse(_distance.text.trim())),
       rating: Value(_rating),
       notes: Value(_notes.text.trim()),
+      // ===== v2 车迷字段 =====
+      trainKind: Value(_trainKind),
+      bureau: Value(_bureau.text.trim()),
+      depot: Value(_depot.text.trim()),
+      maxSpeed: Value(int.tryParse(_maxSpeed.text.trim())),
+      locomotiveModel: Value(_locomotiveModel.text.trim()),
+      locomotiveNumber: Value(_locomotiveNumber.text.trim()),
+      locomotiveFactory: Value(_locomotiveFactory.text.trim()),
+      haulingSection: Value(_haulingSection.text.trim()),
+      emuModel: Value(_emuModel.text.trim()),
+      emuNumber: Value(_emuNumber.text.trim()),
+      emuCapacity: Value(int.tryParse(_emuCapacity.text.trim())),
+      emuFormation: Value(_emuFormation.text.trim()),
+      emuDepot: Value(_emuDepot.text.trim()),
     );
 
     if (_isEditing) {
@@ -244,6 +301,193 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
             ),
             const SizedBox(height: 14),
 
+            // ---- 列车种类（决定显示机车还是动车组字段）----
+            DropdownButtonFormField<String>(
+              initialValue: _trainKind,
+              decoration: const InputDecoration(
+                labelText: '列车种类',
+                prefixIcon: Icon(Icons.category),
+                border: OutlineInputBorder(),
+              ),
+              items: const ['动车组', '普速机辆', '其他']
+                  .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                  .toList(),
+              onChanged: (v) => setState(() => _trainKind = v ?? '动车组'),
+            ),
+            const SizedBox(height: 18),
+
+            // ---- 乘务信息（通用） ----
+            const _SectionTitle(title: '乘务信息'),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _bureau,
+                    decoration: const InputDecoration(
+                      labelText: '值乘路局',
+                      hintText: '如 上海局',
+                      prefixIcon: Icon(Icons.account_balance),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextFormField(
+                    controller: _depot,
+                    decoration: const InputDecoration(
+                      labelText: '机务段 / 车辆段',
+                      hintText: '如 上海机务段',
+                      prefixIcon: Icon(Icons.factory),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _maxSpeed,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: '最高时速',
+                suffixText: 'km/h',
+                prefixIcon: Icon(Icons.speed),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 18),
+
+
+            // ---- 根据列车种类动态显示：动车组 或 本务机车 ----
+            if (_trainKind == '动车组') ...[
+              const _SectionTitle(title: '动车组信息'),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _emuModel,
+                      decoration: const InputDecoration(
+                        labelText: '动车组型号',
+                        hintText: '如 CR400BF',
+                        prefixIcon: Icon(Icons.directions_railway),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _emuNumber,
+                      decoration: const InputDecoration(
+                        labelText: '动车组编号',
+                        hintText: '如 CR400BF-5033',
+                        prefixIcon: Icon(Icons.numbers),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _emuFormation,
+                      decoration: const InputDecoration(
+                        labelText: '编组',
+                        hintText: '如 8、16',
+                        prefixIcon: Icon(Icons.view_day),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _emuCapacity,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: '定员',
+                        suffixText: '人',
+                        prefixIcon: Icon(Icons.groups),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _emuDepot,
+                decoration: const InputDecoration(
+                  labelText: '配属动车所',
+                  hintText: '如 广州南动车所',
+                  prefixIcon: Icon(Icons.home_work),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 18),
+            ] else if (_trainKind == '普速机辆') ...[
+              const _SectionTitle(title: '本务机车信息'),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _locomotiveModel,
+                      decoration: const InputDecoration(
+                        labelText: '机车型号',
+                        hintText: '如 HXD3D、SS9G',
+                        prefixIcon: Icon(Icons.directions_railway),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _locomotiveNumber,
+                      decoration: const InputDecoration(
+                        labelText: '机车编号',
+                        hintText: '如 HXD3D-0031',
+                        prefixIcon: Icon(Icons.tag),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _locomotiveFactory,
+                      decoration: const InputDecoration(
+                        labelText: '制造厂',
+                        hintText: '如 大连机车',
+                        prefixIcon: Icon(Icons.build),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _haulingSection,
+                      decoration: const InputDecoration(
+                        labelText: '牵引区间',
+                        hintText: '如 北京—广州',
+                        prefixIcon: Icon(Icons.route),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+            ],
 
             // ---- 车厢 / 座位 ----
             Row(
@@ -331,6 +575,40 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 区块标题（用于乘务信息、动车组信息等大分组）
+class _SectionTitle extends StatelessWidget {
+  final String title;
+
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 16,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }

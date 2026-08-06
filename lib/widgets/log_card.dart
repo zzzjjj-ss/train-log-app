@@ -114,6 +114,23 @@ class LogCard extends StatelessWidget {
                   ],
                 ],
               ),
+              // 第四行：车型信息（车迷重点关注）
+              if (_rollingStockLine(log) != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _InfoChip(icon: Icons.directions_railway, text: _rollingStockLine(log)!),
+                    if (log.maxSpeed != null && log.maxSpeed! > 0) ...[
+                      const SizedBox(width: 8),
+                      _InfoChip(icon: Icons.speed, text: '${log.maxSpeed} km/h'),
+                    ],
+                    if (log.bureau.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      _InfoChip(icon: Icons.account_balance, text: log.bureau),
+                    ],
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -128,6 +145,19 @@ class LogCard extends StatelessWidget {
     if (dep.isEmpty) return '→ $arr';
     if (arr.isEmpty) return '$dep →';
     return '$dep → $arr';
+  }
+
+  /// 生成车型信息：动车组显示动车组编号/型号，普速显示机车型号/编号
+  String? _rollingStockLine(TrainLog log) {
+    if (log.trainKind == '动车组') {
+      return log.emuNumber.isNotEmpty ? log.emuNumber : log.emuModel;
+    }
+    if (log.trainKind == '普速机辆') {
+      return log.locomotiveNumber.isNotEmpty
+          ? log.locomotiveNumber
+          : log.locomotiveModel;
+    }
+    return null;
   }
 }
 
