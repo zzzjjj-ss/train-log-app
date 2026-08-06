@@ -92,6 +92,7 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _emuCapacity = TextEditingController(text: e?.emuCapacity?.toString() ?? '');
     _emuFormation = TextEditingController(text: e?.emuFormation ?? '');
     _emuDepot = TextEditingController(text: e?.emuDepot ?? '');
+    _carNumber = TextEditingController(text: e?.carNumber ?? '');
   }
 
   @override
