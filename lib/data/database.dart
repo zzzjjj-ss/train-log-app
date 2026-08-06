@@ -102,35 +102,50 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'train_log_app'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
-  /// 数据库迁移：从旧版本升级时保留已有数据、新增列
+  /// 数据库迁移：自愈式 —— 先检查列是否存在，缺失才添加。
+  /// 解决"迁移中断导致 duplicate column"问题（列已加但版本号未更新时，
+  /// 盲目再次 ALTER 会报重复列错误）。
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      if (from < 2) {
-        // v1 → v2：新增车迷扩展字段
-        await m.addColumn(trainLogs, trainLogs.trainKind);
-        await m.addColumn(trainLogs, trainLogs.bureau);
-        await m.addColumn(trainLogs, trainLogs.depot);
-        await m.addColumn(trainLogs, trainLogs.maxSpeed);
-        await m.addColumn(trainLogs, trainLogs.locomotiveModel);
-        await m.addColumn(trainLogs, trainLogs.locomotiveNumber);
-        await m.addColumn(trainLogs, trainLogs.locomotiveFactory);
-        await m.addColumn(trainLogs, trainLogs.haulingSection);
-        await m.addColumn(trainLogs, trainLogs.emuModel);
-        await m.addColumn(trainLogs, trainLogs.emuNumber);
-        await m.addColumn(trainLogs, trainLogs.emuCapacity);
-        await m.addColumn(trainLogs, trainLogs.emuFormation);
-        await m.addColumn(trainLogs, trainLogs.emuDepot);
-      }
-      if (from < 3) {
-        // v2 → v3：新增车厢编号
-        await m.addColumn(trainLogs, trainLogs.carNumber);
-      }
+      // v2 起新增的车迷扩展字段（全部做存在性检查）
+      await _addColumnIfMissing(m, 'train_kind', "TEXT NOT NULL DEFAULT '动车组'");
+      await _addColumnIfMissing(m, 'bureau', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'depot', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'max_speed', 'INTEGER');
+      await _addColumnIfMissing(m, 'locomotive_model', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'locomotive_number', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'locomotive_factory', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'hauling_section', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'emu_model', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'emu_number', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'emu_capacity', 'INTEGER');
+      await _addColumnIfMissing(m, 'emu_formation', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'emu_depot', "TEXT NOT NULL DEFAULT ''");
+      // v3 车厢编号
+      await _addColumnIfMissing(m, 'car_number', "TEXT NOT NULL DEFAULT ''");
     },
   );
+
+  /// 检查列是否存在，缺失才 ALTER 添加（幂等，可安全重复执行）
+  Future<void> _addColumnIfMissing(
+    Migrator m,
+    String columnName,
+    String sqlType,
+  ) async {
+    final rows = await m.database
+        .customSelect('PRAGMA table_info(train_logs)')
+        .get();
+    final exists = rows.any((r) => r.data['name'] == columnName);
+    if (!exists) {
+      await m.database.customStatement(
+        'ALTER TABLE train_logs ADD COLUMN $columnName $sqlType',
+      );
+    }
+  }
 
   /// 监听所有记录（按日期倒序，最新在前）
   /// 返回 Stream：数据库变化时，界面会自动刷新（这就是"响应式"）
