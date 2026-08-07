@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// 关于页：项目信息
+
+/// 构建时间（构建时通过 --dart-define=BUILD_TIME 注入，未注入用回退值）
+const String _buildTime = String.fromEnvironment('BUILD_TIME', defaultValue: '2026-08-07 19:22:29');
+/// 关于页：App 图标 + 名称 + 简介 + 版本 + 链接 + 构建时间/版权
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
@@ -17,72 +20,70 @@ class AboutScreen extends StatelessWidget {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('关于'), centerTitle: true),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
+      body: Column(
         children: [
-          const SizedBox(height: 8),
-          Center(
-            child: Icon(Icons.train, size: 64, color: theme.colorScheme.primary),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              '铁路运转日志',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+          // 主内容：严格垂直居中
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset('assets/app_icon.png', width: 84, height: 84),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '铁路运转日志',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'v0.2.1-beta',
+                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('为铁路迷打造的运转记录工具', style: theme.textTheme.bodyMedium),
+                  const SizedBox(height: 28),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: _openGitHub,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.link, size: 16, color: theme.colorScheme.primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'github.com/zzzjjj-ss/train-log-app',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 4),
-          Center(
-            child: Text(
-              '版本 v0.2.0-beta',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              '为铁路迷打造的运转记录工具',
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Card(
+          // 底部：构建时间 + 版权
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.code),
-                  title: const Text('GitHub'),
-                  subtitle: const Text('zzzjjj-ss/train-log-app'),
-                  trailing: const Icon(Icons.open_in_new, size: 18),
-                  onTap: _openGitHub,
+                Text(
+                  '构建于 $_buildTime',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
-                const Divider(height: 1),
-                const ListTile(
-                  leading: Icon(Icons.gavel),
-                  title: Text('许可证'),
-                  subtitle: Text('MPL-2.0（弱传播性）'),
-                ),
-                const Divider(height: 1),
-                const ListTile(
-                  leading: Icon(Icons.menu_book),
-                  title: Text('车型数据来源'),
-                  subtitle: Text('路路通公开页面（定员为参考值）'),
+                const SizedBox(height: 4),
+                Text(
+                  'Copyright (c) 2026 zzzjjj-ss',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '声明：本应用为铁路迷个人开发的运转记录工具。'
-            '受版权保护的数据（如时刻表）不内置，数据由用户自行记录。',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
