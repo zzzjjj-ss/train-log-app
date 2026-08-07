@@ -7,10 +7,10 @@ import '../data/database.dart';
 import '../data/emu_models.dart';
 import '../providers/providers.dart';
 
-/// 常见席别选项（供下拉选择）
+/// 常见席别选项（供下拉选择；"其他…"会走自定义输入，不进此列表）
 const List<String> kSeatClasses = [
   '二等座', '一等座', '商务座', '硬座', '软座',
-  '硬卧', '软卧', '动卧', '无座', '其他',
+  '硬卧', '软卧', '高级软卧', '动卧', '无座',
 ];
 
 /// 添加 / 编辑运转记录的表单页。
@@ -214,6 +214,61 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     if (kind != null && kind != _trainKind) {
       setState(() => _trainKind = kind!);
     }
+  }
+
+  /// 构建席别下拉选项：预设 + 当前自定义值（若不在预设，编辑时临时显示）+ 其他…
+  List<DropdownMenuItem<String>> _seatClassItems() {
+    final items = <String>[...kSeatClasses];
+    if (!items.contains(_seatClass)) {
+      items.add(_seatClass);
+    }
+    items.add('其他…');
+    return items
+        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+        .toList();
+  }
+
+  /// 席别选择：选"其他…"弹自定义输入框；自定义值只存本次记录，不进预设列表
+  void _onSeatClassChanged(String? v) async {
+    if (v == '其他…') {
+      final custom = await _promptCustomSeatClass();
+      if (custom != null) {
+        setState(() => _seatClass = custom);
+      }
+    } else if (v != null) {
+      setState(() => _seatClass = v);
+    }
+  }
+
+  /// 弹出自定义席别输入对话框，返回输入值（取消/空则 null）
+  Future<String?> _promptCustomSeatClass() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('输入自定义席别'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 10,
+          decoration: const InputDecoration(
+            hintText: '如：高软、大通铺',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+    return (result == null || result.isEmpty) ? null : result;
   }
 
   Future<void> _save({bool silent = false}) async {
@@ -545,7 +600,7 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
             // ---- 乘坐信息（席别/车厢/座位/里程）----
             const _SectionTitle(title: '乘坐信息'),
 
-            // ---- 席别下拉 ----
+            // ---- 席别下拉（"其他…"弹自定义输入，不进预设列表）----
             DropdownButtonFormField<String>(
               initialValue: _seatClass,
               decoration: const InputDecoration(
@@ -553,10 +608,8 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
                 prefixIcon: Icon(Icons.airline_seat_recline_normal),
                 border: OutlineInputBorder(),
               ),
-              items: kSeatClasses
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
-              onChanged: (v) => setState(() => _seatClass = v ?? '二等座'),
+              items: _seatClassItems(),
+              onChanged: _onSeatClassChanged,
             ),
             const SizedBox(height: 14),
 
