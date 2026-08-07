@@ -18,3 +18,6 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 final logsProvider = StreamProvider<List<TrainLog>>((ref) {
   return ref.watch(databaseProvider).watchAllLogs();
 });
+
+/// 当前列车筛选类别（'全部'/'高铁'/'动车'/'城际'/'普速'），默认全部
+final trainFilterProvider = StateProvider<String>((ref) => '全部');

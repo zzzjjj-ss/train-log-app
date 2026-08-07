@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../data/database.dart';
 import '../providers/providers.dart';
+import '../utils/train_classify.dart';
 import '../widgets/log_card.dart';
 
 /// 主页：顶部统计 + 运转记录列表
@@ -30,11 +31,28 @@ class HomeScreen extends ConsumerWidget {
           if (logs.isEmpty) {
             return _EmptyState();
           }
+          final filter = ref.watch(trainFilterProvider);
+          final filtered = filter == '全部'
+              ? logs
+              : logs
+                  .where((l) => classifyTrainNumber(l.trainNumber) == filter)
+                  .toList();
           return ListView(
             padding: const EdgeInsets.only(bottom: 88),
             children: [
-              _StatsSection(logs: logs),
-              for (final log in logs)
+              _StatsSection(logs: filtered),
+              const SizedBox(height: 8),
+              _FilterChips(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+                child: Text(
+                  '共 ${filtered.length} 条记录',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ),
+              for (final log in filtered)
                 // 右滑删除（左→右），confirmDismiss 弹确认框
                 Dismissible(
                   key: ValueKey(log.id),
@@ -98,6 +116,34 @@ class HomeScreen extends ConsumerWidget {
       return true;
     }
     return false;
+  }
+}
+
+/// 顶部列车筛选 chips（全部/高铁G/动车D/城际C/普速）
+class _FilterChips extends ConsumerWidget {
+  const _FilterChips();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(trainFilterProvider);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          for (final option in kTrainFilterOptions)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(option.label),
+                selected: filter == option.value,
+                onSelected: (_) =>
+                    ref.read(trainFilterProvider.notifier).state = option.value,
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
