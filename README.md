@@ -21,7 +21,9 @@
 
 安卓用户直接下载 APK 安装包即可使用：
 
-> **最新版：[v0.2.0-beta](https://github.com/zzzjjj-ss/train-log-app/releases/latest)**
+[![GitHub Release](https://img.shields.io/github/v/release/zzzjjj-ss/train-log-app?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC)](https://github.com/zzzjjj-ss/train-log-app/releases/latest)
+
+> **[下载最新版 APK](https://github.com/zzzjjj-ss/train-log-app/releases/latest)**
 
 历史版本与更新说明见 [Releases 页面](https://github.com/zzzjjj-ss/train-log-app/releases)。
 
