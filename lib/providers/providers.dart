@@ -19,5 +19,9 @@ final logsProvider = StreamProvider<List<TrainLog>>((ref) {
   return ref.watch(databaseProvider).watchAllLogs();
 });
 
-/// 当前列车筛选类别（'全部'/'高铁'/'动车'/'城际'/'普速'），默认全部
-final trainFilterProvider = StateProvider<String>((ref) => '全部');
+/// 当前列车筛选条件（大类 majors + 小类 subs，均支持多选）
+/// majors: 已选大类集合（'动车组'/'普速'）；subs: 已选小类集合（如'高铁'）
+/// 全部为空 = 显示全部
+final trainFilterProvider = StateProvider<({Set<String> majors, Set<String> subs})>(
+  (ref) => (majors: <String>{}, subs: <String>{}),
+);

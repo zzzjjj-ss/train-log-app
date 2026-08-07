@@ -32,10 +32,11 @@ class HomeScreen extends ConsumerWidget {
             return _EmptyState();
           }
           final filter = ref.watch(trainFilterProvider);
-          final filtered = filter == '全部'
+          final filtered = filter.majors.isEmpty && filter.subs.isEmpty
               ? logs
               : logs
-                  .where((l) => classifyTrainNumber(l.trainNumber) == filter)
+                  .where((l) =>
+                      matchTrainFilter(l.trainNumber, filter.majors, filter.subs))
                   .toList();
           return ListView(
             padding: const EdgeInsets.only(bottom: 88),
@@ -119,30 +120,92 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// 顶部列车筛选 chips（全部/高铁G/动车D/城际C/普速）
+/// 列车筛选 chips：大类（动车组/普速）与小类均可多选
 class _FilterChips extends ConsumerWidget {
   const _FilterChips();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filter = ref.watch(trainFilterProvider);
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        children: [
-          for (final option in kTrainFilterOptions)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text(option.label),
-                selected: filter == option.value,
-                onSelected: (_) =>
-                    ref.read(trainFilterProvider.notifier).state = option.value,
+    final f = ref.watch(trainFilterProvider);
+    final notifier = ref.read(trainFilterProvider.notifier);
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ---- 大类行（全部/动车组/普速，多选）----
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: const Text('全部'),
+                  selected: f.majors.isEmpty,
+                  onSelected: (_) => notifier.state = (majors: <String>{}, subs: <String>{}),
+                ),
+              ),
+              for (final major in kTrainMajorOptions)
+                if (major != '全部')
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(major),
+                      selected: f.majors.contains(major),
+                      onSelected: (sel) {
+                        final majors = Set<String>.of(f.majors);
+                        if (sel) {
+                          majors.add(major);
+                        } else {
+                          majors.remove(major);
+                        }
+                        notifier.state = (majors: majors, subs: f.subs);
+                      },
+                    ),
+                  ),
+            ],
+          ),
+        ),
+        // ---- 每个已选大类的下小类行（多选）----
+        for (final major in kTrainMajorOptions)
+          if (major != '全部' && f.majors.contains(major))
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Text(
+                      '$major：',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  for (final sub in kTrainSubOptions[major]!)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(kTrainSubLabels[sub] ?? sub),
+                        visualDensity: VisualDensity.compact,
+                        selected: f.subs.contains(sub),
+                        onSelected: (sel) {
+                          final subs = Set<String>.of(f.subs);
+                          if (sel) {
+                            subs.add(sub);
+                          } else {
+                            subs.remove(sub);
+                          }
+                          notifier.state = (majors: f.majors, subs: subs);
+                        },
+                      ),
+                    ),
+                ],
               ),
             ),
-        ],
-      ),
+      ],
     );
   }
 }
