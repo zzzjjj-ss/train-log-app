@@ -1600,8 +1600,27 @@ class $LocomotivesTable extends Locomotives
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _haulingSectionMeta = const VerificationMeta(
+    'haulingSection',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, logId, model, number, factory];
+  late final GeneratedColumn<String> haulingSection = GeneratedColumn<String>(
+    'hauling_section',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    logId,
+    model,
+    number,
+    factory,
+    haulingSection,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1645,6 +1664,15 @@ class $LocomotivesTable extends Locomotives
         factory.isAcceptableOrUnknown(data['factory']!, _factoryMeta),
       );
     }
+    if (data.containsKey('hauling_section')) {
+      context.handle(
+        _haulingSectionMeta,
+        haulingSection.isAcceptableOrUnknown(
+          data['hauling_section']!,
+          _haulingSectionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1674,6 +1702,10 @@ class $LocomotivesTable extends Locomotives
         DriftSqlType.string,
         data['${effectivePrefix}factory'],
       )!,
+      haulingSection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hauling_section'],
+      )!,
     );
   }
 
@@ -1698,12 +1730,16 @@ class Locomotive extends DataClass implements Insertable<Locomotive> {
 
   /// 制造厂，如：大连机车
   final String factory;
+
+  /// 该台机车的牵引区间，如：北京—郑州（换挂/重联时各车不同，v6）
+  final String haulingSection;
   const Locomotive({
     required this.id,
     required this.logId,
     required this.model,
     required this.number,
     required this.factory,
+    required this.haulingSection,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1713,6 +1749,7 @@ class Locomotive extends DataClass implements Insertable<Locomotive> {
     map['model'] = Variable<String>(model);
     map['number'] = Variable<String>(number);
     map['factory'] = Variable<String>(factory);
+    map['hauling_section'] = Variable<String>(haulingSection);
     return map;
   }
 
@@ -1723,6 +1760,7 @@ class Locomotive extends DataClass implements Insertable<Locomotive> {
       model: Value(model),
       number: Value(number),
       factory: Value(factory),
+      haulingSection: Value(haulingSection),
     );
   }
 
@@ -1737,6 +1775,7 @@ class Locomotive extends DataClass implements Insertable<Locomotive> {
       model: serializer.fromJson<String>(json['model']),
       number: serializer.fromJson<String>(json['number']),
       factory: serializer.fromJson<String>(json['factory']),
+      haulingSection: serializer.fromJson<String>(json['haulingSection']),
     );
   }
   @override
@@ -1748,6 +1787,7 @@ class Locomotive extends DataClass implements Insertable<Locomotive> {
       'model': serializer.toJson<String>(model),
       'number': serializer.toJson<String>(number),
       'factory': serializer.toJson<String>(factory),
+      'haulingSection': serializer.toJson<String>(haulingSection),
     };
   }
 
@@ -1757,12 +1797,14 @@ class Locomotive extends DataClass implements Insertable<Locomotive> {
     String? model,
     String? number,
     String? factory,
+    String? haulingSection,
   }) => Locomotive(
     id: id ?? this.id,
     logId: logId ?? this.logId,
     model: model ?? this.model,
     number: number ?? this.number,
     factory: factory ?? this.factory,
+    haulingSection: haulingSection ?? this.haulingSection,
   );
   Locomotive copyWithCompanion(LocomotivesCompanion data) {
     return Locomotive(
@@ -1771,6 +1813,9 @@ class Locomotive extends DataClass implements Insertable<Locomotive> {
       model: data.model.present ? data.model.value : this.model,
       number: data.number.present ? data.number.value : this.number,
       factory: data.factory.present ? data.factory.value : this.factory,
+      haulingSection: data.haulingSection.present
+          ? data.haulingSection.value
+          : this.haulingSection,
     );
   }
 
@@ -1781,13 +1826,15 @@ class Locomotive extends DataClass implements Insertable<Locomotive> {
           ..write('logId: $logId, ')
           ..write('model: $model, ')
           ..write('number: $number, ')
-          ..write('factory: $factory')
+          ..write('factory: $factory, ')
+          ..write('haulingSection: $haulingSection')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, logId, model, number, factory);
+  int get hashCode =>
+      Object.hash(id, logId, model, number, factory, haulingSection);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1796,7 +1843,8 @@ class Locomotive extends DataClass implements Insertable<Locomotive> {
           other.logId == this.logId &&
           other.model == this.model &&
           other.number == this.number &&
-          other.factory == this.factory);
+          other.factory == this.factory &&
+          other.haulingSection == this.haulingSection);
 }
 
 class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
@@ -1805,12 +1853,14 @@ class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
   final Value<String> model;
   final Value<String> number;
   final Value<String> factory;
+  final Value<String> haulingSection;
   const LocomotivesCompanion({
     this.id = const Value.absent(),
     this.logId = const Value.absent(),
     this.model = const Value.absent(),
     this.number = const Value.absent(),
     this.factory = const Value.absent(),
+    this.haulingSection = const Value.absent(),
   });
   LocomotivesCompanion.insert({
     this.id = const Value.absent(),
@@ -1818,6 +1868,7 @@ class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
     required String model,
     this.number = const Value.absent(),
     this.factory = const Value.absent(),
+    this.haulingSection = const Value.absent(),
   }) : logId = Value(logId),
        model = Value(model);
   static Insertable<Locomotive> custom({
@@ -1826,6 +1877,7 @@ class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
     Expression<String>? model,
     Expression<String>? number,
     Expression<String>? factory,
+    Expression<String>? haulingSection,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1833,6 +1885,7 @@ class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
       if (model != null) 'model': model,
       if (number != null) 'number': number,
       if (factory != null) 'factory': factory,
+      if (haulingSection != null) 'hauling_section': haulingSection,
     });
   }
 
@@ -1842,6 +1895,7 @@ class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
     Value<String>? model,
     Value<String>? number,
     Value<String>? factory,
+    Value<String>? haulingSection,
   }) {
     return LocomotivesCompanion(
       id: id ?? this.id,
@@ -1849,6 +1903,7 @@ class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
       model: model ?? this.model,
       number: number ?? this.number,
       factory: factory ?? this.factory,
+      haulingSection: haulingSection ?? this.haulingSection,
     );
   }
 
@@ -1870,6 +1925,9 @@ class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
     if (factory.present) {
       map['factory'] = Variable<String>(factory.value);
     }
+    if (haulingSection.present) {
+      map['hauling_section'] = Variable<String>(haulingSection.value);
+    }
     return map;
   }
 
@@ -1880,7 +1938,8 @@ class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
           ..write('logId: $logId, ')
           ..write('model: $model, ')
           ..write('number: $number, ')
-          ..write('factory: $factory')
+          ..write('factory: $factory, ')
+          ..write('haulingSection: $haulingSection')
           ..write(')'))
         .toString();
   }
@@ -2665,6 +2724,7 @@ typedef $$LocomotivesTableCreateCompanionBuilder =
       required String model,
       Value<String> number,
       Value<String> factory,
+      Value<String> haulingSection,
     });
 typedef $$LocomotivesTableUpdateCompanionBuilder =
     LocomotivesCompanion Function({
@@ -2673,6 +2733,7 @@ typedef $$LocomotivesTableUpdateCompanionBuilder =
       Value<String> model,
       Value<String> number,
       Value<String> factory,
+      Value<String> haulingSection,
     });
 
 final class $$LocomotivesTableReferences
@@ -2723,6 +2784,11 @@ class $$LocomotivesTableFilterComposer
 
   ColumnFilters<String> get factory => $composableBuilder(
     column: $table.factory,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get haulingSection => $composableBuilder(
+    column: $table.haulingSection,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2779,6 +2845,11 @@ class $$LocomotivesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get haulingSection => $composableBuilder(
+    column: $table.haulingSection,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TrainLogsTableOrderingComposer get logId {
     final $$TrainLogsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2823,6 +2894,11 @@ class $$LocomotivesTableAnnotationComposer
 
   GeneratedColumn<String> get factory =>
       $composableBuilder(column: $table.factory, builder: (column) => column);
+
+  GeneratedColumn<String> get haulingSection => $composableBuilder(
+    column: $table.haulingSection,
+    builder: (column) => column,
+  );
 
   $$TrainLogsTableAnnotationComposer get logId {
     final $$TrainLogsTableAnnotationComposer composer = $composerBuilder(
@@ -2881,12 +2957,14 @@ class $$LocomotivesTableTableManager
                 Value<String> model = const Value.absent(),
                 Value<String> number = const Value.absent(),
                 Value<String> factory = const Value.absent(),
+                Value<String> haulingSection = const Value.absent(),
               }) => LocomotivesCompanion(
                 id: id,
                 logId: logId,
                 model: model,
                 number: number,
                 factory: factory,
+                haulingSection: haulingSection,
               ),
           createCompanionCallback:
               ({
@@ -2895,12 +2973,14 @@ class $$LocomotivesTableTableManager
                 required String model,
                 Value<String> number = const Value.absent(),
                 Value<String> factory = const Value.absent(),
+                Value<String> haulingSection = const Value.absent(),
               }) => LocomotivesCompanion.insert(
                 id: id,
                 logId: logId,
                 model: model,
                 number: number,
                 factory: factory,
+                haulingSection: haulingSection,
               ),
           withReferenceMapper: (p0) => p0
               .map(

@@ -112,6 +112,9 @@ class Locomotives extends Table {
 
   /// 制造厂，如：大连机车
   TextColumn get factory => text().withDefault(const Constant(''))();
+
+  /// 该台机车的牵引区间，如：北京—郑州（换挂/重联时各车不同，v6）
+  TextColumn get haulingSection => text().withDefault(const Constant(''))();
 }
 
 /// 数据库主体。drift 会根据这里的定义生成 _\$AppDatabase 基类。
@@ -123,7 +126,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'train_log_app'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   /// 数据库迁移：自愈式 —— 先检查列是否存在，缺失才添加。
   /// 解决"迁移中断导致 duplicate column"问题（列已加但版本号未更新时，
@@ -151,9 +154,30 @@ class AppDatabase extends _$AppDatabase {
       // v5 跨天到达日偏移
       await _addColumnIfMissing(m, 'arrival_day_offset', 'INTEGER NOT NULL DEFAULT 0');
       // v5 本务机车表（多台机车）
-      await m.createTable(locomotives);
+      if (from < 5) {
+        await m.createTable(locomotives);
+      } else {
+        // v6：机车表补"牵引区间"列（已有表时自愈添加）
+        await _addLocomotiveColumnIfMissing(
+          m, 'hauling_section', "TEXT NOT NULL DEFAULT ''");
+      }
+      // v6：旧数据搬迁 —— 把整趟车的牵引区间写入该趟车第一台机车
+      await _migrateOldHaulingSection(m);
     },
   );
+
+  /// 把 v5 及以前的 train_logs.hauling_section 同步到对应记录的第一台机车
+  Future<void> _migrateOldHaulingSection(Migrator m) async {
+    await m.database.customStatement(
+      'UPDATE locomotives '
+      'SET hauling_section = ('
+      '  SELECT hauling_section FROM train_logs WHERE train_logs.id = locomotives.log_id'
+      ') '
+      'WHERE hauling_section = \'\' '
+      'AND log_id IN (SELECT MIN(id) FROM locomotives GROUP BY log_id) '
+      'AND (SELECT hauling_section FROM train_logs WHERE train_logs.id = locomotives.log_id) != \'\'',
+    );
+  }
 
   /// 检查列是否存在，缺失才 ALTER 添加（幂等，可安全重复执行）
   Future<void> _addColumnIfMissing(
@@ -168,6 +192,23 @@ class AppDatabase extends _$AppDatabase {
     if (!exists) {
       await m.database.customStatement(
         'ALTER TABLE train_logs ADD COLUMN $columnName $sqlType',
+      );
+    }
+  }
+
+  /// 机车表专用：检查列是否存在，缺失才 ALTER 添加（自愈、幂等）
+  Future<void> _addLocomotiveColumnIfMissing(
+    Migrator m,
+    String columnName,
+    String sqlType,
+  ) async {
+    final rows = await m.database
+        .customSelect('PRAGMA table_info(locomotives)')
+        .get();
+    final exists = rows.any((r) => r.data['name'] == columnName);
+    if (!exists) {
+      await m.database.customStatement(
+        'ALTER TABLE locomotives ADD COLUMN $columnName $sqlType',
       );
     }
   }

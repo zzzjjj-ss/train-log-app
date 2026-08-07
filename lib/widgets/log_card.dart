@@ -251,9 +251,20 @@ class _LocomotiveList extends ConsumerWidget {
             for (final l in locos)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: _InfoChip(
-                  icon: Icons.directions_railway,
-                  text: l.number.isNotEmpty ? '${l.model}·${l.number}' : l.model,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _InfoChip(
+                      icon: Icons.directions_railway,
+                      text: l.number.isNotEmpty
+                          ? '${l.model}·${l.number}'
+                          : l.model,
+                    ),
+                    if (l.haulingSection.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      _InfoChip(icon: Icons.route, text: l.haulingSection),
+                    ],
+                  ],
                 ),
               ),
           ],

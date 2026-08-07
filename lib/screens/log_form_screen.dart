@@ -49,7 +49,6 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
   late final TextEditingController _locomotiveModel; // 机车型号
   late final TextEditingController _locomotiveNumber; // 机车编号
   late final TextEditingController _locomotiveFactory; // 制造厂
-  late final TextEditingController _haulingSection; // 牵引区间
   late final TextEditingController _emuModel;       // 动车组型号
   late final TextEditingController _emuNumber;      // 动车组编号
   late final TextEditingController _emuCapacity;    // 定员
@@ -95,7 +94,6 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _locomotiveModel = TextEditingController(text: e?.locomotiveModel ?? '');
     _locomotiveNumber = TextEditingController(text: e?.locomotiveNumber ?? '');
     _locomotiveFactory = TextEditingController(text: e?.locomotiveFactory ?? '');
-    _haulingSection = TextEditingController(text: e?.haulingSection ?? '');
     _emuModel = TextEditingController(text: e?.emuModel ?? '');
     _emuNumber = TextEditingController(text: e?.emuNumber ?? '');
     _emuCapacity = TextEditingController(text: e?.emuCapacity?.toString() ?? '');
@@ -149,7 +147,6 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _locomotiveModel.dispose();
     _locomotiveNumber.dispose();
     _locomotiveFactory.dispose();
-    _haulingSection.dispose();
     _emuModel.dispose();
     _emuNumber.dispose();
     _emuCapacity.dispose();
@@ -297,7 +294,11 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
       bureau: Value(_bureau.text.trim()),
       depot: Value(_depot.text.trim()),
       maxSpeed: Value(int.tryParse(_maxSpeed.text.trim())),
-      haulingSection: Value(_haulingSection.text.trim()),
+      haulingSection: Value(
+        _locomotives.isNotEmpty
+            ? _locomotives.first.haulingSection.text.trim()
+            : '',
+      ),
       emuModel: Value(_emuModel.text.trim()),
       emuNumber: Value(_emuNumber.text.trim()),
       emuCapacity: Value(int.tryParse(_emuCapacity.text.trim())),
@@ -382,6 +383,7 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
             model: Value(l.model.text.trim()),
             number: Value(l.number.text.trim()),
             factory: Value(l.factory.text.trim()),
+            haulingSection: Value(l.haulingSection.text.trim()),
           ),
     ];
   }
@@ -467,6 +469,17 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
               labelText: '制造厂',
               hintText: '如 大连机车',
               prefixIcon: Icon(Icons.build),
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: l.haulingSection,
+            decoration: const InputDecoration(
+              labelText: '牵引区间',
+              hintText: '如 北京—郑州',
+              prefixIcon: Icon(Icons.route),
               border: OutlineInputBorder(),
               isDense: true,
             ),
@@ -839,16 +852,6 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
                   label: const Text('添加本务机车'),
                 ),
               ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _haulingSection,
-                decoration: const InputDecoration(
-                  labelText: '牵引区间',
-                  hintText: '如 北京—广州',
-                  prefixIcon: Icon(Icons.route),
-                  border: OutlineInputBorder(),
-                ),
-              ),
               const SizedBox(height: 18),
             ],
 
@@ -1026,24 +1029,28 @@ class _TimeField extends StatelessWidget {
   }
 }
 
-/// 表单内的单台本务机车草稿（含型号/编号/制造厂输入控制器）
+/// 表单内的单台本务机车草稿（型号/编号/制造厂/牵引区间）
 class _LocomotiveDraft {
   final TextEditingController model;
   final TextEditingController number;
   final TextEditingController factory;
+  final TextEditingController haulingSection;
 
   _LocomotiveDraft({
     String model = '',
     String number = '',
     String factory = '',
+    String haulingSection = '',
   })  : model = TextEditingController(text: model),
         number = TextEditingController(text: number),
-        factory = TextEditingController(text: factory);
+        factory = TextEditingController(text: factory),
+        haulingSection = TextEditingController(text: haulingSection);
 
   void dispose() {
     model.dispose();
     number.dispose();
     factory.dispose();
+    haulingSection.dispose();
   }
 }
 
