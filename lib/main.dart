@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'providers/providers.dart';
 
-/// 程序入口。
-/// ProviderScope 是 Riverpod 的"总开关"：
-/// 整个 App 的数据共享（数据库等）都从这里开始分发。
-void main() {
-  runApp(const ProviderScope(child: TrainLogApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // 提前加载本地设置（主题色/外观），注入 Riverpod 供全局使用
+  final prefs = await SharedPreferences.getInstance();
+  runApp(
+    ProviderScope(
+      overrides: [prefsProvider.overrideWithValue(prefs)],
+      child: const TrainLogApp(),
+    ),
+  );
 }

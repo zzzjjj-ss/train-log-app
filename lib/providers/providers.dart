@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/database.dart';
@@ -25,3 +27,47 @@ final logsProvider = StreamProvider<List<TrainLog>>((ref) {
 final trainFilterProvider = StateProvider<({Set<String> majors, Set<String> subs})>(
   (ref) => (majors: <String>{}, subs: <String>{}),
 );
+
+/// SharedPreferences 单例（main() 里 override 注入）
+final prefsProvider =
+    Provider<SharedPreferences>((ref) => throw UnimplementedError());
+
+/// 应用设置（主题色 + 外观模式）
+class AppSettings {
+  /// 主题色 seed 值（int 形式的 Color 值）
+  final int seedValue;
+
+  /// 外观模式：light / dark / system
+  final String themeMode;
+
+  const AppSettings({
+    this.seedValue = 0xFF00696D,
+    this.themeMode = 'system',
+  });
+}
+
+class SettingsNotifier extends Notifier<AppSettings> {
+  @override
+  AppSettings build() {
+    final prefs = ref.watch(prefsProvider);
+    return AppSettings(
+      seedValue: prefs.getInt('seedValue') ?? 0xFF00696D,
+      themeMode: prefs.getString('themeMode') ?? 'system',
+    );
+  }
+
+  /// 切换主题色并持久化
+  void setSeed(int value) {
+    state = AppSettings(seedValue: value, themeMode: state.themeMode);
+    ref.read(prefsProvider).setInt('seedValue', value);
+  }
+
+  /// 切换外观模式（浅色/深色/跟随系统）并持久化
+  void setThemeMode(String mode) {
+    state = AppSettings(seedValue: state.seedValue, themeMode: mode);
+    ref.read(prefsProvider).setString('themeMode', mode);
+  }
+}
+
+final settingsProvider =
+    NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);

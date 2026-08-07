@@ -18,8 +18,20 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          tooltip: '设置',
+          onPressed: () => context.push('/settings'),
+        ),
         title: const Text('铁路运转日志'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: '关于',
+            onPressed: () => context.push('/about'),
+          ),
+        ],
       ),
       body: logsAsync.when(
         // 数据还没加载完
