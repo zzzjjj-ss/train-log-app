@@ -62,7 +62,19 @@ class HomeScreen extends ConsumerWidget {
             children: [
               _StatsSection(logs: filtered),
               const SizedBox(height: 8),
-              if (searchExpanded) ...[_SearchBar(), const SizedBox(height: 8)],
+              AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: searchExpanded
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          _SearchBar(),
+                          SizedBox(height: 8),
+                        ],
+                      )
+                    : const SizedBox.shrink(),
+              ),
               _FilterChips(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
@@ -140,18 +152,43 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// 顶部关键词搜索栏
-class _SearchBar extends ConsumerWidget {
+/// 顶部关键词搜索栏（带输入控制器，清除时同步清空输入框）
+class _SearchBar extends ConsumerStatefulWidget {
   const _SearchBar();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends ConsumerState<_SearchBar> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        TextEditingController(text: ref.read(searchKeywordProvider));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _clear() {
+    _controller.clear();
+    ref.read(searchKeywordProvider.notifier).state = '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final keyword = ref.watch(searchKeywordProvider);
-    final notifier = ref.read(searchKeywordProvider.notifier);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: TextField(
-        onChanged: (v) => notifier.state = v,
+        controller: _controller,
+        onChanged: (v) => ref.read(searchKeywordProvider.notifier).state = v,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: '搜索车次、车站、车型、编号…',
@@ -161,7 +198,7 @@ class _SearchBar extends ConsumerWidget {
               : IconButton(
                   icon: const Icon(Icons.clear),
                   tooltip: '清除',
-                  onPressed: () => notifier.state = '',
+                  onPressed: _clear,
                 ),
           isDense: true,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
