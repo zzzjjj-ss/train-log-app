@@ -275,4 +275,22 @@ class AppDatabase extends _$AppDatabase {
     }
     return map;
   }
+
+  /// 获取全部记录（导出用）
+  Future<List<TrainLog>> getAllLogs() {
+    final query = select(trainLogs)
+      ..orderBy([(t) => OrderingTerm.asc(t.id)]);
+    return query.get();
+  }
+
+  /// 清空全部记录与机车（覆盖导入用）
+  Future<void> deleteAllLogs() async {
+    await delete(locomotives).go();
+    await delete(trainLogs).go();
+  }
+
+  /// 新增一条本务机车（导入用）
+  Future<int> addLocomotive(LocomotivesCompanion item) {
+    return into(locomotives).insert(item);
+  }
 }
