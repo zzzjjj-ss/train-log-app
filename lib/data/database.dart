@@ -265,4 +265,14 @@ class AppDatabase extends _$AppDatabase {
       ..orderBy([(l) => OrderingTerm.asc(l.id)]);
     return query.get();
   }
+
+  /// 获取全部本务机车，按 logId 分组（搜索多台机车用，一次查询）
+  Future<Map<int, List<Locomotive>>> getAllLocomotivesByLog() async {
+    final all = await select(locomotives).get();
+    final map = <int, List<Locomotive>>{};
+    for (final l in all) {
+      map.putIfAbsent(l.logId, () => []).add(l);
+    }
+    return map;
+  }
 }

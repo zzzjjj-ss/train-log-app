@@ -16,6 +16,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // 监听数据库里的记录列表：任何增删改都会触发这里重建
     final logsAsync = ref.watch(logsProvider);
+    final locoMapAsync = ref.watch(locomotivesMapProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -44,11 +45,19 @@ class HomeScreen extends ConsumerWidget {
           if (logs.isEmpty) {
             return _EmptyState();
           }
+          final locoMap = locoMapAsync.maybeWhen(
+            data: (m) => m,
+            orElse: () => const <int, List<Locomotive>>{},
+          );
           final keyword = ref.watch(searchKeywordProvider);
           final searchExpanded = ref.watch(searchExpandedProvider);
           final filter = ref.watch(trainFilterProvider);
+          final hitsMap = <int, List<String>>{};
           final filtered = logs.where((l) {
-            if (keyword.trim().isNotEmpty && !matchKeyword(l, keyword)) {
+            final hits =
+                matchKeywordFields(l, locoMap[l.id] ?? const [], keyword);
+            hitsMap[l.id] = hits;
+            if (keyword.trim().isNotEmpty && hits.isEmpty) {
               return false;
             }
             if (filter.majors.isNotEmpty || filter.subs.isNotEmpty) {
@@ -103,6 +112,7 @@ class HomeScreen extends ConsumerWidget {
                   child: LogCard(
                     log: log,
                     onTap: () => _openEdit(context, log),
+                    searchHits: hitsMap[log.id] ?? const [],
                   ),
                 ),
             ],

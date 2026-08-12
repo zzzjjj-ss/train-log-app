@@ -77,3 +77,8 @@ final searchKeywordProvider = StateProvider<String>((ref) => '');
 
 /// 搜索栏是否展开
 final searchExpandedProvider = StateProvider<bool>((ref) => false);
+
+/// 全部本务机车按记录分组（搜索多台机车用）
+final locomotivesMapProvider = FutureProvider<Map<int, List<Locomotive>>>(
+  (ref) => ref.watch(databaseProvider).getAllLocomotivesByLog(),
+);

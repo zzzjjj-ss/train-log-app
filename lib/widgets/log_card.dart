@@ -10,8 +10,14 @@ import '../providers/providers.dart';
 class LogCard extends ConsumerWidget {
   final TrainLog log;
   final VoidCallback? onTap;
+  final List<String> searchHits;
 
-  const LogCard({super.key, required this.log, this.onTap});
+  const LogCard({
+    super.key,
+    required this.log,
+    this.onTap,
+    this.searchHits = const [],
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -141,6 +147,8 @@ class LogCard extends ConsumerWidget {
                     ],
                   ),
               ],
+              // 搜索高亮标签（搜索时显示匹配原因）
+              if (searchHits.isNotEmpty) ...[_SearchHighlight(hits: searchHits)],
             ],
           ),
         ),
@@ -270,6 +278,47 @@ class _LocomotiveList extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+/// 搜索高亮标签（主题色，显示匹配字段）
+class _SearchHighlight extends StatelessWidget {
+  final List<String> hits;
+  const _SearchHighlight({required this.hits});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            for (final h in hits)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Text(
+                  h,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
