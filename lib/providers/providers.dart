@@ -71,3 +71,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
 final settingsProvider =
     NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+
+/// 搜索关键词（主页搜索栏输入）
+final searchKeywordProvider = StateProvider<String>((ref) => '');

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../data/database.dart';
 import '../providers/providers.dart';
 import '../utils/train_classify.dart';
+import '../utils/search.dart';
 import '../widgets/log_card.dart';
 
 /// 主页：顶部统计 + 运转记录列表
@@ -43,17 +44,24 @@ class HomeScreen extends ConsumerWidget {
           if (logs.isEmpty) {
             return _EmptyState();
           }
+          final keyword = ref.watch(searchKeywordProvider);
           final filter = ref.watch(trainFilterProvider);
-          final filtered = filter.majors.isEmpty && filter.subs.isEmpty
-              ? logs
-              : logs
-                  .where((l) =>
-                      matchTrainFilter(l.trainNumber, filter.majors, filter.subs))
-                  .toList();
+          final filtered = logs.where((l) {
+            if (keyword.trim().isNotEmpty && !matchKeyword(l, keyword)) {
+              return false;
+            }
+            if (filter.majors.isNotEmpty || filter.subs.isNotEmpty) {
+              return matchTrainFilter(
+                  l.trainNumber, filter.majors, filter.subs);
+            }
+            return true;
+          }).toList();
           return ListView(
             padding: const EdgeInsets.only(bottom: 88),
             children: [
               _StatsSection(logs: filtered),
+              const SizedBox(height: 8),
+              _SearchBar(),
               const SizedBox(height: 8),
               _FilterChips(),
               Padding(
@@ -129,6 +137,37 @@ class HomeScreen extends ConsumerWidget {
       return true;
     }
     return false;
+  }
+}
+
+/// 顶部关键词搜索栏
+class _SearchBar extends ConsumerWidget {
+  const _SearchBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final keyword = ref.watch(searchKeywordProvider);
+    final notifier = ref.read(searchKeywordProvider.notifier);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: TextField(
+        onChanged: (v) => notifier.state = v,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: '搜索车次、车站、车型、编号…',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: keyword.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: '清除',
+                  onPressed: () => notifier.state = '',
+                ),
+          isDense: true,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
   }
 }
 
