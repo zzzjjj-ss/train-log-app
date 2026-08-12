@@ -16,8 +16,13 @@ List<String> matchKeywordFields(
 
   void hit(String field, String value) {
     if (value.isEmpty) return;
-    final tag = '$field:$value';
-    if (value.toLowerCase().contains(k) && !hits.contains(tag)) {
+    final low = value.toLowerCase();
+    if (!low.contains(k)) return;
+    // 长文本（备注）只显示关键词上下文片段，避免整段刷屏
+    final tag = field == '备注' && value.length > 24
+        ? '备注:${_snippet(value, k)}'
+        : '$field:$value';
+    if (!hits.contains(tag)) {
       hits.add(tag);
     }
   }
@@ -54,4 +59,19 @@ List<String> matchKeywordFields(
   }
 
   return hits;
+}
+
+/// 截取关键词上下文片段：…前文【关键词】后文…
+String _snippet(String text, String keyword) {
+  const radius = 8;
+  final idx = text.toLowerCase().indexOf(keyword.toLowerCase());
+  if (idx == -1) return text;
+  final start = idx > radius ? idx - radius : 0;
+  final end = (idx + keyword.length + radius) < text.length
+      ? idx + keyword.length + radius
+      : text.length;
+  final pre = start > 0 ? '…' : '';
+  final post = end < text.length ? '…' : '';
+  final kw = text.substring(idx, idx + keyword.length);
+  return '$pre${text.substring(start, idx)}【$kw】${text.substring(idx + keyword.length, end)}$post';
 }
