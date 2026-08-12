@@ -5,12 +5,12 @@ import '../providers/providers.dart';
 
 /// 预设主题色（车迷向）
 const List<({String label, int value})> kThemeSeeds = [
-  (label: '铁路青绿', value: 0xFF00696D),
-  (label: '复兴号金', value: 0xFFB8860B),
-  (label: '高铁蓝', value: 0xFF1565C0),
-  (label: '信号红', value: 0xFFC62828),
-  (label: '深空灰蓝', value: 0xFF37474F),
-  (label: '车票紫', value: 0xFF6A1B9A),
+  (label: '绿', value: 0xFF00696D),
+  (label: '金', value: 0xFFB8860B),
+  (label: '蓝', value: 0xFF1565C0),
+  (label: '红', value: 0xFFC62828),
+  (label: '灰蓝', value: 0xFF37474F),
+  (label: '紫', value: 0xFF6A1B9A),
 ];
 
 /// 设置页：主题色 + 外观模式
