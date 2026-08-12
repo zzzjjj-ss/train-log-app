@@ -74,3 +74,6 @@ final settingsProvider =
 
 /// 搜索关键词（主页搜索栏输入）
 final searchKeywordProvider = StateProvider<String>((ref) => '');
+
+/// 搜索栏是否展开
+final searchExpandedProvider = StateProvider<bool>((ref) => false);

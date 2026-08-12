@@ -45,6 +45,7 @@ class HomeScreen extends ConsumerWidget {
             return _EmptyState();
           }
           final keyword = ref.watch(searchKeywordProvider);
+          final searchExpanded = ref.watch(searchExpandedProvider);
           final filter = ref.watch(trainFilterProvider);
           final filtered = logs.where((l) {
             if (keyword.trim().isNotEmpty && !matchKeyword(l, keyword)) {
@@ -61,8 +62,7 @@ class HomeScreen extends ConsumerWidget {
             children: [
               _StatsSection(logs: filtered),
               const SizedBox(height: 8),
-              _SearchBar(),
-              const SizedBox(height: 8),
+              if (searchExpanded) ...[_SearchBar(), const SizedBox(height: 8)],
               _FilterChips(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
@@ -178,6 +178,7 @@ class _FilterChips extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final f = ref.watch(trainFilterProvider);
+    final searchExpanded = ref.watch(searchExpandedProvider);
     final notifier = ref.read(trainFilterProvider.notifier);
     final theme = Theme.of(context);
     return Column(
@@ -189,6 +190,21 @@ class _FilterChips extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  icon: Icon(searchExpanded ? Icons.search_off : Icons.search),
+                  tooltip: searchExpanded ? '收起搜索' : '展开搜索',
+                  onPressed: () =>
+                      ref.read(searchExpandedProvider.notifier).state =
+                          !searchExpanded,
+                  style: IconButton.styleFrom(
+                    backgroundColor: searchExpanded
+                        ? theme.colorScheme.secondaryContainer
+                        : theme.colorScheme.surfaceContainerHighest,
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: ChoiceChip(
