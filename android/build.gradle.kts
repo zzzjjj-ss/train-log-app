@@ -2,7 +2,6 @@ allprojects {
     repositories {
         maven { url = uri("https://maven.aliyun.com/repository/google") }
         maven { url = uri("https://maven.aliyun.com/repository/public") }
-        google()
         mavenCentral()
     }
 }
@@ -23,4 +22,12 @@ subprojects {
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
+}
+// 子项目 buildscript 也走阿里云镜像（部分插件依赖如 file_picker 需要）
+subprojects {
+    buildscript {
+        repositories {
+            maven { url = uri("https://maven.aliyun.com/repository/google") }
+        }
+    }
 }
