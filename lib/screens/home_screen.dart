@@ -52,7 +52,7 @@ class HomeScreen extends ConsumerWidget {
           final keyword = ref.watch(searchKeywordProvider);
           final searchExpanded = ref.watch(searchExpandedProvider);
           final filter = ref.watch(trainFilterProvider);
-          final hitsMap = <int, List<String>>{};
+          final hitsMap = <int, List<SearchHit>>{};
           final filtered = logs.where((l) {
             final hits =
                 matchKeywordFields(l, locoMap[l.id] ?? const [], keyword);
@@ -112,7 +112,7 @@ class HomeScreen extends ConsumerWidget {
                   child: LogCard(
                     log: log,
                     onTap: () => _openEdit(context, log),
-                    searchHits: hitsMap[log.id] ?? const [],
+                    searchHits: hitsMap[log.id] ?? const <SearchHit>[],
                   ),
                 ),
             ],

@@ -4,19 +4,20 @@ import 'package:intl/intl.dart';
 
 import '../data/database.dart';
 import '../providers/providers.dart';
+import '../utils/search.dart';
 
 /// 单条运转记录的卡片组件。
 /// 传入一条 TrainLog，渲染成一站漂亮的卡片。
 class LogCard extends ConsumerWidget {
   final TrainLog log;
   final VoidCallback? onTap;
-  final List<String> searchHits;
+  final List<SearchHit> searchHits;
 
   const LogCard({
     super.key,
     required this.log,
     this.onTap,
-    this.searchHits = const [],
+    this.searchHits = const <SearchHit>[],
   });
 
   @override
@@ -281,10 +282,37 @@ class _LocomotiveList extends ConsumerWidget {
     );
   }
 }
-/// 搜索高亮标签（主题色，显示匹配字段）
+/// 搜索高亮标签（主题色，备注关键词高亮加粗下划线）
 class _SearchHighlight extends StatelessWidget {
-  final List<String> hits;
+  final List<SearchHit> hits;
   const _SearchHighlight({required this.hits});
+
+  Widget _buildText(BuildContext context, SearchHit hit) {
+    final theme = Theme.of(context);
+    final base = theme.textTheme.labelSmall?.copyWith(
+      color: theme.colorScheme.primary,
+      fontWeight: FontWeight.w600,
+    );
+    final hl = hit.highlight;
+    if (hl == null || !hit.text.contains(hl)) {
+      return Text(hit.text, style: base);
+    }
+    final idx = hit.text.indexOf(hl);
+    final spans = <TextSpan>[];
+    if (idx > 0) spans.add(TextSpan(text: hit.text.substring(0, idx)));
+    spans.add(TextSpan(
+      text: hl,
+      style: base?.copyWith(
+        fontWeight: FontWeight.bold,
+        decoration: TextDecoration.underline,
+        decorationColor: theme.colorScheme.primary,
+      ),
+    ));
+    if (idx + hl.length < hit.text.length) {
+      spans.add(TextSpan(text: hit.text.substring(idx + hl.length)));
+    }
+    return Text.rich(TextSpan(children: spans, style: base));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +325,7 @@ class _SearchHighlight extends StatelessWidget {
           spacing: 6,
           runSpacing: 4,
           children: [
-            for (final h in hits)
+            for (final hit in hits)
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -308,13 +336,7 @@ class _SearchHighlight extends StatelessWidget {
                     color: theme.colorScheme.primary.withValues(alpha: 0.45),
                   ),
                 ),
-                child: Text(
-                  h,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: _buildText(context, hit),
               ),
           ],
         ),
