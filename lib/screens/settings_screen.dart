@@ -1,10 +1,8 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../providers/providers.dart';
 import '../services/backup_service.dart';
@@ -23,21 +21,20 @@ const List<({String label, int value})> kThemeSeeds = [
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
-  /// 导出全部数据为 JSON 并调起系统分享
+  /// 导出全部数据为 JSON：先选保存文件夹，再写入文件
   Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
+      final dir = await FilePicker.getDirectoryPath(
+        dialogTitle: '选择备份保存位置',
+      );
+      if (dir == null) return; // 用户取消
       final db = ref.read(databaseProvider);
       final json = await exportAllJson(db);
-      await Share.shareXFiles(
-        [
-          XFile.fromData(
-            utf8.encode(json),
-            mimeType: 'application/json',
-            name: 'train_log_backup.json',
-          ),
-        ],
-        text: '铁路运转日志备份',
+      final file = File('$dir/train_log_backup.json');
+      await file.writeAsString(json);
+      messenger.showSnackBar(
+        SnackBar(content: Text('已导出: ${file.path}')),
       );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('导出失败: $e')));
@@ -136,6 +133,29 @@ class SettingsScreen extends ConsumerWidget {
             onSelectionChanged: (v) => notifier.setThemeMode(v.first),
           ),
           const SizedBox(height: 30),
+          Text('卡片样式', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 14),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(
+                value: 'normal',
+                label: Text('常规'),
+                icon: Icon(Icons.view_agenda_outlined),
+              ),
+              ButtonSegment(
+                value: 'ticket',
+                label: Text('车票'),
+                icon: Icon(Icons.confirmation_number_outlined),
+              ),
+            ],
+            selected: {settings.cardStyle},
+            onSelectionChanged: (v) => notifier.setCardStyle(v.first),
+          ),
+          const SizedBox(height: 30),
+          Text('乘车人信息', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 14),
+          const _PassengerEditor(),
+          const SizedBox(height: 30),
           Text('数据管理', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Card(
@@ -159,6 +179,108 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 乘车人信息编辑（身份证前10/后4 + 姓名）。
+/// 仅保存在本机 SharedPreferences，不出现在 JSON 导出中。
+class _PassengerEditor extends ConsumerStatefulWidget {
+  const _PassengerEditor();
+
+  @override
+  ConsumerState<_PassengerEditor> createState() => _PassengerEditorState();
+}
+
+class _PassengerEditorState extends ConsumerState<_PassengerEditor> {
+  late final TextEditingController _prefix;
+  late final TextEditingController _suffix;
+  late final TextEditingController _name;
+
+  @override
+  void initState() {
+    super.initState();
+    final s = ref.read(settingsProvider);
+    _prefix = TextEditingController(text: s.idCardPrefix);
+    _suffix = TextEditingController(text: s.idCardSuffix);
+    _name = TextEditingController(text: s.passengerName);
+  }
+
+  @override
+  void dispose() {
+    _prefix.dispose();
+    _suffix.dispose();
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    ref.read(settingsProvider.notifier).setPassengerInfo(
+          idCardPrefix: _prefix.text.trim(),
+          idCardSuffix: _suffix.text.trim(),
+          passengerName: _name.text.trim(),
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _prefix,
+                onChanged: (_) => _save(),
+                maxLength: 10,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: '身份证前10位',
+                  
+                  counterText: '',
+                  isDense: true,
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _suffix,
+                onChanged: (_) => _save(),
+                maxLength: 4,
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(
+                  labelText: '后4位',
+                  
+                  counterText: '',
+                  isDense: true,
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _name,
+          onChanged: (_) => _save(),
+          maxLength: 12,
+          decoration: const InputDecoration(
+            labelText: '乘车人姓名',
+            
+            counterText: '',
+            isDense: true,
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '仅保存在本机，用于车票展示，不会出现在导出的备份中。',
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+        ),
+      ],
     );
   }
 }

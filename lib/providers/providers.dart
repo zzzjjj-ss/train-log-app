@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/painting.dart' show decodeImageFromList;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,7 +37,7 @@ final trainFilterProvider = StateProvider<({Set<String> majors, Set<String> subs
 final prefsProvider =
     Provider<SharedPreferences>((ref) => throw UnimplementedError());
 
-/// 应用设置（主题色 + 外观模式）
+/// 应用设置（主题色 + 外观模式 + 卡片样式）
 class AppSettings {
   /// 主题色 seed 值（int 形式的 Color 值）
   final int seedValue;
@@ -40,9 +45,25 @@ class AppSettings {
   /// 外观模式：light / dark / system
   final String themeMode;
 
+  /// 记录卡片样式：normal=常规卡片，ticket=车票样式
+  final String cardStyle;
+
+  /// 身份证号前 10 位（仅本地保存，不出现在导出）
+  final String idCardPrefix;
+
+  /// 身份证号后 4 位（仅本地保存，不出现在导出）
+  final String idCardSuffix;
+
+  /// 乘车人姓名（仅本地保存，不出现在导出）
+  final String passengerName;
+
   const AppSettings({
     this.seedValue = 0xFF00696D,
     this.themeMode = 'system',
+    this.cardStyle = 'normal',
+    this.idCardPrefix = '',
+    this.idCardSuffix = '',
+    this.passengerName = '',
   });
 }
 
@@ -53,19 +74,70 @@ class SettingsNotifier extends Notifier<AppSettings> {
     return AppSettings(
       seedValue: prefs.getInt('seedValue') ?? 0xFF00696D,
       themeMode: prefs.getString('themeMode') ?? 'system',
+      cardStyle: prefs.getString('cardStyle') ?? 'normal',
+      idCardPrefix: prefs.getString('idCardPrefix') ?? '',
+      idCardSuffix: prefs.getString('idCardSuffix') ?? '',
+      passengerName: prefs.getString('passengerName') ?? '',
     );
   }
 
   /// 切换主题色并持久化
   void setSeed(int value) {
-    state = AppSettings(seedValue: value, themeMode: state.themeMode);
+    state = AppSettings(
+      seedValue: value,
+      themeMode: state.themeMode,
+      cardStyle: state.cardStyle,
+      idCardPrefix: state.idCardPrefix,
+      idCardSuffix: state.idCardSuffix,
+      passengerName: state.passengerName,
+    );
     ref.read(prefsProvider).setInt('seedValue', value);
   }
 
   /// 切换外观模式（浅色/深色/跟随系统）并持久化
   void setThemeMode(String mode) {
-    state = AppSettings(seedValue: state.seedValue, themeMode: mode);
+    state = AppSettings(
+      seedValue: state.seedValue,
+      themeMode: mode,
+      cardStyle: state.cardStyle,
+      idCardPrefix: state.idCardPrefix,
+      idCardSuffix: state.idCardSuffix,
+      passengerName: state.passengerName,
+    );
     ref.read(prefsProvider).setString('themeMode', mode);
+  }
+
+  /// 切换卡片样式（常规 / 车票）并持久化
+  void setCardStyle(String style) {
+    state = AppSettings(
+      seedValue: state.seedValue,
+      themeMode: state.themeMode,
+      cardStyle: style,
+      idCardPrefix: state.idCardPrefix,
+      idCardSuffix: state.idCardSuffix,
+      passengerName: state.passengerName,
+    );
+    ref.read(prefsProvider).setString('cardStyle', style);
+  }
+
+  /// 保存乘车人信息（身份证前10/后4 + 姓名），仅本地
+  void setPassengerInfo({
+    required String idCardPrefix,
+    required String idCardSuffix,
+    required String passengerName,
+  }) {
+    state = AppSettings(
+      seedValue: state.seedValue,
+      themeMode: state.themeMode,
+      cardStyle: state.cardStyle,
+      idCardPrefix: idCardPrefix,
+      idCardSuffix: idCardSuffix,
+      passengerName: passengerName,
+    );
+    final prefs = ref.read(prefsProvider);
+    prefs.setString('idCardPrefix', idCardPrefix);
+    prefs.setString('idCardSuffix', idCardSuffix);
+    prefs.setString('passengerName', passengerName);
   }
 }
 
@@ -82,3 +154,54 @@ final searchExpandedProvider = StateProvider<bool>((ref) => false);
 final locomotivesMapProvider = FutureProvider<Map<int, List<Locomotive>>>(
   (ref) => ref.watch(databaseProvider).getAllLocomotivesByLog(),
 );
+
+// ============ 车票自定义覆盖层（v8） ============
+
+/// 单张车票的渲染数据：文字覆盖 + 背景图 + 映射模式
+class TicketRenderData {
+  final Map<String, String> textOverrides;
+  final ui.Image? bgImage;
+  final String bgMode;
+
+  const TicketRenderData({
+    required this.textOverrides,
+    this.bgImage,
+    this.bgMode = 'cover',
+  });
+
+  /// 是否有任何自定义（用于决定是否显示"重置"按钮）
+  bool get hasCustom =>
+      textOverrides.values.any((v) => v.isNotEmpty) || bgImage != null;
+}
+
+/// 加载某条记录的车票覆盖层（文字覆盖 + 背景图解码）。
+/// 无覆盖返回 null；编辑保存后调用 ref.invalidate 刷新。
+final ticketRenderProvider =
+    FutureProvider.family<TicketRenderData?, int>((ref, logId) async {
+  final db = ref.watch(databaseProvider);
+  final ov = await db.getTicketOverrides(logId);
+  if (ov == null) return null;
+
+  Map<String, String> text = {};
+  if (ov.overridesJson.trim().isNotEmpty) {
+    try {
+      final decoded = jsonDecode(ov.overridesJson);
+      if (decoded is Map) {
+        text = decoded.map((k, v) => MapEntry(k.toString(), v.toString()));
+      }
+    } catch (_) {}
+  }
+
+  ui.Image? img;
+  if (ov.bgImagePath.isNotEmpty) {
+    try {
+      final bytes = await File(ov.bgImagePath).readAsBytes();
+      img = await decodeImageFromList(bytes);
+    } catch (_) {}
+  }
+  return TicketRenderData(
+    textOverrides: text,
+    bgImage: img,
+    bgMode: ov.bgMode,
+  );
+});

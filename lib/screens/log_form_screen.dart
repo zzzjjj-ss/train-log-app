@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../data/database.dart';
 import '../data/emu_models.dart';
 import '../providers/providers.dart';
+import '../utils/ticket_gen.dart';
 
 /// 常见席别选项（供下拉选择；"其他…"会走自定义输入，不进此列表）
 const List<String> kSeatClasses = [
@@ -56,6 +57,14 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
   late final TextEditingController _emuDepot;       // 配属
   late final TextEditingController _carNumber;      // 车厢编号
 
+  // ===== 购票信息（v7） =====
+  late final TextEditingController _price;          // 票价
+  late final TextEditingController _gate;           // 检票口
+  late final TextEditingController _saleLocation;   // 发售地
+  late final TextEditingController _serialNumber;   // 流水号
+  late final TextEditingController _ticketNumber;   // 编号
+  late Set<String> _buyMarks;                       // 购票标记（网/孩/折）
+
   late String _trainKind; // 列车种类
 
   /// 到达日偏移：0=当天，1=次日，2=第3天
@@ -100,6 +109,20 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _emuFormation = TextEditingController(text: e?.emuFormation ?? '');
     _emuDepot = TextEditingController(text: e?.emuDepot ?? '');
     _carNumber = TextEditingController(text: e?.carNumber ?? '');
+
+    // ===== v7 购票信息 =====
+    _price = TextEditingController(text: e?.price ?? '');
+    _gate = TextEditingController(text: e?.gate ?? '');
+    _saleLocation = TextEditingController(text: e?.saleLocation ?? '');
+    // 流水号/编号：编辑时预填原值；新增时随机生成一张新票
+    final existingSerial = e?.serialNumber ?? '';
+    _serialNumber = TextEditingController(text: existingSerial);
+    _ticketNumber = TextEditingController(text: e?.ticketNumber ?? '');
+    if (!_isEditing || existingSerial.isEmpty) {
+      _regenerateTicketNumbers();
+    }
+    // 购票标记：字符串（如"孩网折"）拆成字符集合
+    _buyMarks = {...(e?.buyMarks ?? '').split('')}..remove('');
 
     // ===== v5 状态 =====
     _arrivalDayOffset = e?.arrivalDayOffset ?? 0;
@@ -153,10 +176,24 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
     _emuFormation.dispose();
     _emuDepot.dispose();
     _carNumber.dispose();
+    _price.dispose();
+    _gate.dispose();
+    _saleLocation.dispose();
+    _serialNumber.dispose();
+    _ticketNumber.dispose();
     for (final l in _locomotives) {
       l.dispose();
     }
     super.dispose();
+  }
+
+  /// 重新随机生成流水号 + 编号
+  void _regenerateTicketNumbers() {
+    final serial = TicketGen.serialNumber();
+    setState(() {
+      _serialNumber.text = serial;
+      _ticketNumber.text = TicketGen.ticketNumber(serial: serial);
+    });
   }
 
   Future<void> _pickDate() async {
@@ -210,6 +247,20 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
 
     if (kind != null && kind != _trainKind) {
       setState(() => _trainKind = kind!);
+    }
+  }
+
+  /// 购票标记的中文说明：网=网购、孩=儿童、折=折扣
+  String _buyMarkLabel(String m) {
+    switch (m) {
+      case '网':
+        return '网（网购）';
+      case '孩':
+        return '孩（儿童）';
+      case '折':
+        return '折（折扣）';
+      default:
+        return m;
     }
   }
 
@@ -307,6 +358,14 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
       carNumber: Value(_carNumber.text.trim()),
       // v5 跨天偏移 + 第一台机车同步旧字段（兼容旧卡片显示）
       arrivalDayOffset: Value(_arrivalDayOffset),
+      // v7 购票信息
+      price: Value(_price.text.trim()),
+      gate: Value(_gate.text.trim()),
+      // 固定顺序：网→孩→折（如"网折"、"孩网折"）
+      buyMarks: Value(const ['网', '孩', '折'].where(_buyMarks.contains).join()),
+      saleLocation: Value(_saleLocation.text.trim()),
+      serialNumber: Value(_serialNumber.text.trim()),
+      ticketNumber: Value(_ticketNumber.text.trim()),
       locomotiveModel: Value(
         _locomotives.isNotEmpty ? _locomotives.first.model.text.trim() : '',
       ),
@@ -634,7 +693,7 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
                     controller: _carriage,
                     decoration: const InputDecoration(
                       labelText: '车厢',
-                      hintText: '如 08 车',
+                      hintText: '如 08',
                       prefixIcon: Icon(Icons.door_sliding),
                       border: OutlineInputBorder(),
                     ),
@@ -738,6 +797,100 @@ class _LogFormScreenState extends ConsumerState<LogFormScreen> {
             ),
             const SizedBox(height: 18),
 
+            // ---- 购票信息（v7） ----
+            const _SectionTitle(title: '购票信息'),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _price,
+                    decoration: const InputDecoration(
+                      labelText: '票价',
+                      hintText: '如 54.5元',
+                      prefixIcon: Icon(Icons.attach_money),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextFormField(
+                    controller: _gate,
+                    decoration: const InputDecoration(
+                      labelText: '检票口',
+                      hintText: '如 22',
+                      prefixIcon: Icon(Icons.meeting_room),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _FieldLabel(
+              label: '购票标记（可多选）',
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  for (final m in const ['网', '孩', '折'])
+                    FilterChip(
+                      label: Text(_buyMarkLabel(m)),
+                      selected: _buyMarks.contains(m),
+                      onSelected: (sel) => setState(() {
+                        if (sel) {
+                          _buyMarks.add(m);
+                        } else {
+                          _buyMarks.remove(m);
+                        }
+                      }),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _saleLocation,
+              decoration: const InputDecoration(
+                labelText: '发售地',
+                hintText: '如 北京南售',
+                prefixIcon: Icon(Icons.store),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: TextFormField(
+                    controller: _serialNumber,
+                    decoration: const InputDecoration(
+                      labelText: '流水号',
+                      hintText: '如 R093443',
+                      prefixIcon: Icon(Icons.qr_code_2),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                IconButton.filledTonal(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: '重新生成流水号/编号',
+                  onPressed: _regenerateTicketNumbers,
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _ticketNumber,
+              decoration: const InputDecoration(
+                labelText: '车票编号',
+                hintText: '如 10010301110403F067846',
+                prefixIcon: Icon(Icons.confirmation_number),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 18),
 
             // ---- 根据列车种类动态显示：动车组 或 本务机车 ----
             if (_trainKind == '动车组') ...[

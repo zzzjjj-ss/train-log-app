@@ -330,6 +330,74 @@ class $TrainLogsTable extends TrainLogs
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _priceMeta = const VerificationMeta('price');
+  @override
+  late final GeneratedColumn<String> price = GeneratedColumn<String>(
+    'price',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _gateMeta = const VerificationMeta('gate');
+  @override
+  late final GeneratedColumn<String> gate = GeneratedColumn<String>(
+    'gate',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _buyMarksMeta = const VerificationMeta(
+    'buyMarks',
+  );
+  @override
+  late final GeneratedColumn<String> buyMarks = GeneratedColumn<String>(
+    'buy_marks',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _saleLocationMeta = const VerificationMeta(
+    'saleLocation',
+  );
+  @override
+  late final GeneratedColumn<String> saleLocation = GeneratedColumn<String>(
+    'sale_location',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _serialNumberMeta = const VerificationMeta(
+    'serialNumber',
+  );
+  @override
+  late final GeneratedColumn<String> serialNumber = GeneratedColumn<String>(
+    'serial_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _ticketNumberMeta = const VerificationMeta(
+    'ticketNumber',
+  );
+  @override
+  late final GeneratedColumn<String> ticketNumber = GeneratedColumn<String>(
+    'ticket_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -360,6 +428,12 @@ class $TrainLogsTable extends TrainLogs
     emuDepot,
     carNumber,
     arrivalDayOffset,
+    price,
+    gate,
+    buyMarks,
+    saleLocation,
+    serialNumber,
+    ticketNumber,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -582,6 +656,51 @@ class $TrainLogsTable extends TrainLogs
         ),
       );
     }
+    if (data.containsKey('price')) {
+      context.handle(
+        _priceMeta,
+        price.isAcceptableOrUnknown(data['price']!, _priceMeta),
+      );
+    }
+    if (data.containsKey('gate')) {
+      context.handle(
+        _gateMeta,
+        gate.isAcceptableOrUnknown(data['gate']!, _gateMeta),
+      );
+    }
+    if (data.containsKey('buy_marks')) {
+      context.handle(
+        _buyMarksMeta,
+        buyMarks.isAcceptableOrUnknown(data['buy_marks']!, _buyMarksMeta),
+      );
+    }
+    if (data.containsKey('sale_location')) {
+      context.handle(
+        _saleLocationMeta,
+        saleLocation.isAcceptableOrUnknown(
+          data['sale_location']!,
+          _saleLocationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('serial_number')) {
+      context.handle(
+        _serialNumberMeta,
+        serialNumber.isAcceptableOrUnknown(
+          data['serial_number']!,
+          _serialNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ticket_number')) {
+      context.handle(
+        _ticketNumberMeta,
+        ticketNumber.isAcceptableOrUnknown(
+          data['ticket_number']!,
+          _ticketNumberMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -703,6 +822,30 @@ class $TrainLogsTable extends TrainLogs
         DriftSqlType.int,
         data['${effectivePrefix}arrival_day_offset'],
       )!,
+      price: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}price'],
+      )!,
+      gate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gate'],
+      )!,
+      buyMarks: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}buy_marks'],
+      )!,
+      saleLocation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sale_location'],
+      )!,
+      serialNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serial_number'],
+      )!,
+      ticketNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ticket_number'],
+      )!,
     );
   }
 
@@ -796,6 +939,24 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
 
   /// 到达日偏移：0=当天，1=次日，2=第3天（跨天行程，v5）
   final int arrivalDayOffset;
+
+  /// 票价，如 "54.5元"（存文本，保留 ￥ 等格式）
+  final String price;
+
+  /// 检票口，如 "22"（对应车票右上"检票口22"）
+  final String gate;
+
+  /// 购票标记：可组合 "网"(网购)/"孩"(儿童)/"折"(折扣)，如 "孩网折"
+  final String buyMarks;
+
+  /// 发售地，如 "北京南售"
+  final String saleLocation;
+
+  /// 流水号，如 "R093443"（随机生成，可手工改）
+  final String serialNumber;
+
+  /// 车票编号，如 "10010301110403F067846"（随机生成，可手工改）
+  final String ticketNumber;
   const TrainLog({
     required this.id,
     required this.trainNumber,
@@ -825,6 +986,12 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     required this.emuDepot,
     required this.carNumber,
     required this.arrivalDayOffset,
+    required this.price,
+    required this.gate,
+    required this.buyMarks,
+    required this.saleLocation,
+    required this.serialNumber,
+    required this.ticketNumber,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -863,6 +1030,12 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     map['emu_depot'] = Variable<String>(emuDepot);
     map['car_number'] = Variable<String>(carNumber);
     map['arrival_day_offset'] = Variable<int>(arrivalDayOffset);
+    map['price'] = Variable<String>(price);
+    map['gate'] = Variable<String>(gate);
+    map['buy_marks'] = Variable<String>(buyMarks);
+    map['sale_location'] = Variable<String>(saleLocation);
+    map['serial_number'] = Variable<String>(serialNumber);
+    map['ticket_number'] = Variable<String>(ticketNumber);
     return map;
   }
 
@@ -902,6 +1075,12 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       emuDepot: Value(emuDepot),
       carNumber: Value(carNumber),
       arrivalDayOffset: Value(arrivalDayOffset),
+      price: Value(price),
+      gate: Value(gate),
+      buyMarks: Value(buyMarks),
+      saleLocation: Value(saleLocation),
+      serialNumber: Value(serialNumber),
+      ticketNumber: Value(ticketNumber),
     );
   }
 
@@ -939,6 +1118,12 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       emuDepot: serializer.fromJson<String>(json['emuDepot']),
       carNumber: serializer.fromJson<String>(json['carNumber']),
       arrivalDayOffset: serializer.fromJson<int>(json['arrivalDayOffset']),
+      price: serializer.fromJson<String>(json['price']),
+      gate: serializer.fromJson<String>(json['gate']),
+      buyMarks: serializer.fromJson<String>(json['buyMarks']),
+      saleLocation: serializer.fromJson<String>(json['saleLocation']),
+      serialNumber: serializer.fromJson<String>(json['serialNumber']),
+      ticketNumber: serializer.fromJson<String>(json['ticketNumber']),
     );
   }
   @override
@@ -973,6 +1158,12 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       'emuDepot': serializer.toJson<String>(emuDepot),
       'carNumber': serializer.toJson<String>(carNumber),
       'arrivalDayOffset': serializer.toJson<int>(arrivalDayOffset),
+      'price': serializer.toJson<String>(price),
+      'gate': serializer.toJson<String>(gate),
+      'buyMarks': serializer.toJson<String>(buyMarks),
+      'saleLocation': serializer.toJson<String>(saleLocation),
+      'serialNumber': serializer.toJson<String>(serialNumber),
+      'ticketNumber': serializer.toJson<String>(ticketNumber),
     };
   }
 
@@ -1005,6 +1196,12 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     String? emuDepot,
     String? carNumber,
     int? arrivalDayOffset,
+    String? price,
+    String? gate,
+    String? buyMarks,
+    String? saleLocation,
+    String? serialNumber,
+    String? ticketNumber,
   }) => TrainLog(
     id: id ?? this.id,
     trainNumber: trainNumber ?? this.trainNumber,
@@ -1034,6 +1231,12 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     emuDepot: emuDepot ?? this.emuDepot,
     carNumber: carNumber ?? this.carNumber,
     arrivalDayOffset: arrivalDayOffset ?? this.arrivalDayOffset,
+    price: price ?? this.price,
+    gate: gate ?? this.gate,
+    buyMarks: buyMarks ?? this.buyMarks,
+    saleLocation: saleLocation ?? this.saleLocation,
+    serialNumber: serialNumber ?? this.serialNumber,
+    ticketNumber: ticketNumber ?? this.ticketNumber,
   );
   TrainLog copyWithCompanion(TrainLogsCompanion data) {
     return TrainLog(
@@ -1093,6 +1296,18 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
       arrivalDayOffset: data.arrivalDayOffset.present
           ? data.arrivalDayOffset.value
           : this.arrivalDayOffset,
+      price: data.price.present ? data.price.value : this.price,
+      gate: data.gate.present ? data.gate.value : this.gate,
+      buyMarks: data.buyMarks.present ? data.buyMarks.value : this.buyMarks,
+      saleLocation: data.saleLocation.present
+          ? data.saleLocation.value
+          : this.saleLocation,
+      serialNumber: data.serialNumber.present
+          ? data.serialNumber.value
+          : this.serialNumber,
+      ticketNumber: data.ticketNumber.present
+          ? data.ticketNumber.value
+          : this.ticketNumber,
     );
   }
 
@@ -1126,7 +1341,13 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           ..write('emuFormation: $emuFormation, ')
           ..write('emuDepot: $emuDepot, ')
           ..write('carNumber: $carNumber, ')
-          ..write('arrivalDayOffset: $arrivalDayOffset')
+          ..write('arrivalDayOffset: $arrivalDayOffset, ')
+          ..write('price: $price, ')
+          ..write('gate: $gate, ')
+          ..write('buyMarks: $buyMarks, ')
+          ..write('saleLocation: $saleLocation, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('ticketNumber: $ticketNumber')
           ..write(')'))
         .toString();
   }
@@ -1161,6 +1382,12 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
     emuDepot,
     carNumber,
     arrivalDayOffset,
+    price,
+    gate,
+    buyMarks,
+    saleLocation,
+    serialNumber,
+    ticketNumber,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1193,7 +1420,13 @@ class TrainLog extends DataClass implements Insertable<TrainLog> {
           other.emuFormation == this.emuFormation &&
           other.emuDepot == this.emuDepot &&
           other.carNumber == this.carNumber &&
-          other.arrivalDayOffset == this.arrivalDayOffset);
+          other.arrivalDayOffset == this.arrivalDayOffset &&
+          other.price == this.price &&
+          other.gate == this.gate &&
+          other.buyMarks == this.buyMarks &&
+          other.saleLocation == this.saleLocation &&
+          other.serialNumber == this.serialNumber &&
+          other.ticketNumber == this.ticketNumber);
 }
 
 class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
@@ -1225,6 +1458,12 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
   final Value<String> emuDepot;
   final Value<String> carNumber;
   final Value<int> arrivalDayOffset;
+  final Value<String> price;
+  final Value<String> gate;
+  final Value<String> buyMarks;
+  final Value<String> saleLocation;
+  final Value<String> serialNumber;
+  final Value<String> ticketNumber;
   const TrainLogsCompanion({
     this.id = const Value.absent(),
     this.trainNumber = const Value.absent(),
@@ -1254,6 +1493,12 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     this.emuDepot = const Value.absent(),
     this.carNumber = const Value.absent(),
     this.arrivalDayOffset = const Value.absent(),
+    this.price = const Value.absent(),
+    this.gate = const Value.absent(),
+    this.buyMarks = const Value.absent(),
+    this.saleLocation = const Value.absent(),
+    this.serialNumber = const Value.absent(),
+    this.ticketNumber = const Value.absent(),
   });
   TrainLogsCompanion.insert({
     this.id = const Value.absent(),
@@ -1284,6 +1529,12 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     this.emuDepot = const Value.absent(),
     this.carNumber = const Value.absent(),
     this.arrivalDayOffset = const Value.absent(),
+    this.price = const Value.absent(),
+    this.gate = const Value.absent(),
+    this.buyMarks = const Value.absent(),
+    this.saleLocation = const Value.absent(),
+    this.serialNumber = const Value.absent(),
+    this.ticketNumber = const Value.absent(),
   }) : trainNumber = Value(trainNumber),
        departureStation = Value(departureStation),
        arrivalStation = Value(arrivalStation),
@@ -1317,6 +1568,12 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     Expression<String>? emuDepot,
     Expression<String>? carNumber,
     Expression<int>? arrivalDayOffset,
+    Expression<String>? price,
+    Expression<String>? gate,
+    Expression<String>? buyMarks,
+    Expression<String>? saleLocation,
+    Expression<String>? serialNumber,
+    Expression<String>? ticketNumber,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1347,6 +1604,12 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
       if (emuDepot != null) 'emu_depot': emuDepot,
       if (carNumber != null) 'car_number': carNumber,
       if (arrivalDayOffset != null) 'arrival_day_offset': arrivalDayOffset,
+      if (price != null) 'price': price,
+      if (gate != null) 'gate': gate,
+      if (buyMarks != null) 'buy_marks': buyMarks,
+      if (saleLocation != null) 'sale_location': saleLocation,
+      if (serialNumber != null) 'serial_number': serialNumber,
+      if (ticketNumber != null) 'ticket_number': ticketNumber,
     });
   }
 
@@ -1379,6 +1642,12 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     Value<String>? emuDepot,
     Value<String>? carNumber,
     Value<int>? arrivalDayOffset,
+    Value<String>? price,
+    Value<String>? gate,
+    Value<String>? buyMarks,
+    Value<String>? saleLocation,
+    Value<String>? serialNumber,
+    Value<String>? ticketNumber,
   }) {
     return TrainLogsCompanion(
       id: id ?? this.id,
@@ -1409,6 +1678,12 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
       emuDepot: emuDepot ?? this.emuDepot,
       carNumber: carNumber ?? this.carNumber,
       arrivalDayOffset: arrivalDayOffset ?? this.arrivalDayOffset,
+      price: price ?? this.price,
+      gate: gate ?? this.gate,
+      buyMarks: buyMarks ?? this.buyMarks,
+      saleLocation: saleLocation ?? this.saleLocation,
+      serialNumber: serialNumber ?? this.serialNumber,
+      ticketNumber: ticketNumber ?? this.ticketNumber,
     );
   }
 
@@ -1499,6 +1774,24 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
     if (arrivalDayOffset.present) {
       map['arrival_day_offset'] = Variable<int>(arrivalDayOffset.value);
     }
+    if (price.present) {
+      map['price'] = Variable<String>(price.value);
+    }
+    if (gate.present) {
+      map['gate'] = Variable<String>(gate.value);
+    }
+    if (buyMarks.present) {
+      map['buy_marks'] = Variable<String>(buyMarks.value);
+    }
+    if (saleLocation.present) {
+      map['sale_location'] = Variable<String>(saleLocation.value);
+    }
+    if (serialNumber.present) {
+      map['serial_number'] = Variable<String>(serialNumber.value);
+    }
+    if (ticketNumber.present) {
+      map['ticket_number'] = Variable<String>(ticketNumber.value);
+    }
     return map;
   }
 
@@ -1532,7 +1825,13 @@ class TrainLogsCompanion extends UpdateCompanion<TrainLog> {
           ..write('emuFormation: $emuFormation, ')
           ..write('emuDepot: $emuDepot, ')
           ..write('carNumber: $carNumber, ')
-          ..write('arrivalDayOffset: $arrivalDayOffset')
+          ..write('arrivalDayOffset: $arrivalDayOffset, ')
+          ..write('price: $price, ')
+          ..write('gate: $gate, ')
+          ..write('buyMarks: $buyMarks, ')
+          ..write('saleLocation: $saleLocation, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('ticketNumber: $ticketNumber')
           ..write(')'))
         .toString();
   }
@@ -1945,16 +2244,340 @@ class LocomotivesCompanion extends UpdateCompanion<Locomotive> {
   }
 }
 
+class $TicketOverridesTable extends TicketOverrides
+    with TableInfo<$TicketOverridesTable, TicketOverride> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TicketOverridesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _logIdMeta = const VerificationMeta('logId');
+  @override
+  late final GeneratedColumn<int> logId = GeneratedColumn<int>(
+    'log_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES train_logs (id)',
+    ),
+  );
+  static const VerificationMeta _overridesJsonMeta = const VerificationMeta(
+    'overridesJson',
+  );
+  @override
+  late final GeneratedColumn<String> overridesJson = GeneratedColumn<String>(
+    'overrides_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _bgImagePathMeta = const VerificationMeta(
+    'bgImagePath',
+  );
+  @override
+  late final GeneratedColumn<String> bgImagePath = GeneratedColumn<String>(
+    'bg_image_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _bgModeMeta = const VerificationMeta('bgMode');
+  @override
+  late final GeneratedColumn<String> bgMode = GeneratedColumn<String>(
+    'bg_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('cover'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    logId,
+    overridesJson,
+    bgImagePath,
+    bgMode,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ticket_overrides';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TicketOverride> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('log_id')) {
+      context.handle(
+        _logIdMeta,
+        logId.isAcceptableOrUnknown(data['log_id']!, _logIdMeta),
+      );
+    }
+    if (data.containsKey('overrides_json')) {
+      context.handle(
+        _overridesJsonMeta,
+        overridesJson.isAcceptableOrUnknown(
+          data['overrides_json']!,
+          _overridesJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bg_image_path')) {
+      context.handle(
+        _bgImagePathMeta,
+        bgImagePath.isAcceptableOrUnknown(
+          data['bg_image_path']!,
+          _bgImagePathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bg_mode')) {
+      context.handle(
+        _bgModeMeta,
+        bgMode.isAcceptableOrUnknown(data['bg_mode']!, _bgModeMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {logId};
+  @override
+  TicketOverride map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TicketOverride(
+      logId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}log_id'],
+      )!,
+      overridesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}overrides_json'],
+      )!,
+      bgImagePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bg_image_path'],
+      )!,
+      bgMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bg_mode'],
+      )!,
+    );
+  }
+
+  @override
+  $TicketOverridesTable createAlias(String alias) {
+    return $TicketOverridesTable(attachedDatabase, alias);
+  }
+}
+
+class TicketOverride extends DataClass implements Insertable<TicketOverride> {
+  /// 所属运转记录 id（主键，每票一条）
+  final int logId;
+
+  /// 文字覆盖 JSON：{"trainNumber":"G1234","price":"88元",...}，空 {} 表示无覆盖
+  final String overridesJson;
+
+  /// 背景图文件路径（应用文档目录），空表示用默认浅蓝背景
+  final String bgImagePath;
+
+  /// 背景映射模式：cover / contain / fill
+  final String bgMode;
+  const TicketOverride({
+    required this.logId,
+    required this.overridesJson,
+    required this.bgImagePath,
+    required this.bgMode,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['log_id'] = Variable<int>(logId);
+    map['overrides_json'] = Variable<String>(overridesJson);
+    map['bg_image_path'] = Variable<String>(bgImagePath);
+    map['bg_mode'] = Variable<String>(bgMode);
+    return map;
+  }
+
+  TicketOverridesCompanion toCompanion(bool nullToAbsent) {
+    return TicketOverridesCompanion(
+      logId: Value(logId),
+      overridesJson: Value(overridesJson),
+      bgImagePath: Value(bgImagePath),
+      bgMode: Value(bgMode),
+    );
+  }
+
+  factory TicketOverride.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TicketOverride(
+      logId: serializer.fromJson<int>(json['logId']),
+      overridesJson: serializer.fromJson<String>(json['overridesJson']),
+      bgImagePath: serializer.fromJson<String>(json['bgImagePath']),
+      bgMode: serializer.fromJson<String>(json['bgMode']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'logId': serializer.toJson<int>(logId),
+      'overridesJson': serializer.toJson<String>(overridesJson),
+      'bgImagePath': serializer.toJson<String>(bgImagePath),
+      'bgMode': serializer.toJson<String>(bgMode),
+    };
+  }
+
+  TicketOverride copyWith({
+    int? logId,
+    String? overridesJson,
+    String? bgImagePath,
+    String? bgMode,
+  }) => TicketOverride(
+    logId: logId ?? this.logId,
+    overridesJson: overridesJson ?? this.overridesJson,
+    bgImagePath: bgImagePath ?? this.bgImagePath,
+    bgMode: bgMode ?? this.bgMode,
+  );
+  TicketOverride copyWithCompanion(TicketOverridesCompanion data) {
+    return TicketOverride(
+      logId: data.logId.present ? data.logId.value : this.logId,
+      overridesJson: data.overridesJson.present
+          ? data.overridesJson.value
+          : this.overridesJson,
+      bgImagePath: data.bgImagePath.present
+          ? data.bgImagePath.value
+          : this.bgImagePath,
+      bgMode: data.bgMode.present ? data.bgMode.value : this.bgMode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TicketOverride(')
+          ..write('logId: $logId, ')
+          ..write('overridesJson: $overridesJson, ')
+          ..write('bgImagePath: $bgImagePath, ')
+          ..write('bgMode: $bgMode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(logId, overridesJson, bgImagePath, bgMode);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TicketOverride &&
+          other.logId == this.logId &&
+          other.overridesJson == this.overridesJson &&
+          other.bgImagePath == this.bgImagePath &&
+          other.bgMode == this.bgMode);
+}
+
+class TicketOverridesCompanion extends UpdateCompanion<TicketOverride> {
+  final Value<int> logId;
+  final Value<String> overridesJson;
+  final Value<String> bgImagePath;
+  final Value<String> bgMode;
+  const TicketOverridesCompanion({
+    this.logId = const Value.absent(),
+    this.overridesJson = const Value.absent(),
+    this.bgImagePath = const Value.absent(),
+    this.bgMode = const Value.absent(),
+  });
+  TicketOverridesCompanion.insert({
+    this.logId = const Value.absent(),
+    this.overridesJson = const Value.absent(),
+    this.bgImagePath = const Value.absent(),
+    this.bgMode = const Value.absent(),
+  });
+  static Insertable<TicketOverride> custom({
+    Expression<int>? logId,
+    Expression<String>? overridesJson,
+    Expression<String>? bgImagePath,
+    Expression<String>? bgMode,
+  }) {
+    return RawValuesInsertable({
+      if (logId != null) 'log_id': logId,
+      if (overridesJson != null) 'overrides_json': overridesJson,
+      if (bgImagePath != null) 'bg_image_path': bgImagePath,
+      if (bgMode != null) 'bg_mode': bgMode,
+    });
+  }
+
+  TicketOverridesCompanion copyWith({
+    Value<int>? logId,
+    Value<String>? overridesJson,
+    Value<String>? bgImagePath,
+    Value<String>? bgMode,
+  }) {
+    return TicketOverridesCompanion(
+      logId: logId ?? this.logId,
+      overridesJson: overridesJson ?? this.overridesJson,
+      bgImagePath: bgImagePath ?? this.bgImagePath,
+      bgMode: bgMode ?? this.bgMode,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (logId.present) {
+      map['log_id'] = Variable<int>(logId.value);
+    }
+    if (overridesJson.present) {
+      map['overrides_json'] = Variable<String>(overridesJson.value);
+    }
+    if (bgImagePath.present) {
+      map['bg_image_path'] = Variable<String>(bgImagePath.value);
+    }
+    if (bgMode.present) {
+      map['bg_mode'] = Variable<String>(bgMode.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TicketOverridesCompanion(')
+          ..write('logId: $logId, ')
+          ..write('overridesJson: $overridesJson, ')
+          ..write('bgImagePath: $bgImagePath, ')
+          ..write('bgMode: $bgMode')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $TrainLogsTable trainLogs = $TrainLogsTable(this);
   late final $LocomotivesTable locomotives = $LocomotivesTable(this);
+  late final $TicketOverridesTable ticketOverrides = $TicketOverridesTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [trainLogs, locomotives];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    trainLogs,
+    locomotives,
+    ticketOverrides,
+  ];
 }
 
 typedef $$TrainLogsTableCreateCompanionBuilder =
@@ -1987,6 +2610,12 @@ typedef $$TrainLogsTableCreateCompanionBuilder =
       Value<String> emuDepot,
       Value<String> carNumber,
       Value<int> arrivalDayOffset,
+      Value<String> price,
+      Value<String> gate,
+      Value<String> buyMarks,
+      Value<String> saleLocation,
+      Value<String> serialNumber,
+      Value<String> ticketNumber,
     });
 typedef $$TrainLogsTableUpdateCompanionBuilder =
     TrainLogsCompanion Function({
@@ -2018,6 +2647,12 @@ typedef $$TrainLogsTableUpdateCompanionBuilder =
       Value<String> emuDepot,
       Value<String> carNumber,
       Value<int> arrivalDayOffset,
+      Value<String> price,
+      Value<String> gate,
+      Value<String> buyMarks,
+      Value<String> saleLocation,
+      Value<String> serialNumber,
+      Value<String> ticketNumber,
     });
 
 final class $$TrainLogsTableReferences
@@ -2037,6 +2672,26 @@ final class $$TrainLogsTableReferences
     ).filter((f) => f.logId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_locomotivesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TicketOverridesTable, List<TicketOverride>>
+  _ticketOverridesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.ticketOverrides,
+    aliasName: 'train_logs__id__ticket_overrides__log_id',
+  );
+
+  $$TicketOverridesTableProcessedTableManager get ticketOverridesRefs {
+    final manager = $$TicketOverridesTableTableManager(
+      $_db,
+      $_db.ticketOverrides,
+    ).filter((f) => f.logId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _ticketOverridesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -2192,6 +2847,36 @@ class $$TrainLogsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get price => $composableBuilder(
+    column: $table.price,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gate => $composableBuilder(
+    column: $table.gate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get buyMarks => $composableBuilder(
+    column: $table.buyMarks,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get saleLocation => $composableBuilder(
+    column: $table.saleLocation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ticketNumber => $composableBuilder(
+    column: $table.ticketNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> locomotivesRefs(
     Expression<bool> Function($$LocomotivesTableFilterComposer f) f,
   ) {
@@ -2208,6 +2893,31 @@ class $$TrainLogsTableFilterComposer
           }) => $$LocomotivesTableFilterComposer(
             $db: $db,
             $table: $db.locomotives,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> ticketOverridesRefs(
+    Expression<bool> Function($$TicketOverridesTableFilterComposer f) f,
+  ) {
+    final $$TicketOverridesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ticketOverrides,
+      getReferencedColumn: (t) => t.logId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TicketOverridesTableFilterComposer(
+            $db: $db,
+            $table: $db.ticketOverrides,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2366,6 +3076,36 @@ class $$TrainLogsTableOrderingComposer
     column: $table.arrivalDayOffset,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get price => $composableBuilder(
+    column: $table.price,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gate => $composableBuilder(
+    column: $table.gate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get buyMarks => $composableBuilder(
+    column: $table.buyMarks,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get saleLocation => $composableBuilder(
+    column: $table.saleLocation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ticketNumber => $composableBuilder(
+    column: $table.ticketNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TrainLogsTableAnnotationComposer
@@ -2489,6 +3229,30 @@ class $$TrainLogsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get price =>
+      $composableBuilder(column: $table.price, builder: (column) => column);
+
+  GeneratedColumn<String> get gate =>
+      $composableBuilder(column: $table.gate, builder: (column) => column);
+
+  GeneratedColumn<String> get buyMarks =>
+      $composableBuilder(column: $table.buyMarks, builder: (column) => column);
+
+  GeneratedColumn<String> get saleLocation => $composableBuilder(
+    column: $table.saleLocation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ticketNumber => $composableBuilder(
+    column: $table.ticketNumber,
+    builder: (column) => column,
+  );
+
   Expression<T> locomotivesRefs<T extends Object>(
     Expression<T> Function($$LocomotivesTableAnnotationComposer a) f,
   ) {
@@ -2513,6 +3277,31 @@ class $$TrainLogsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> ticketOverridesRefs<T extends Object>(
+    Expression<T> Function($$TicketOverridesTableAnnotationComposer a) f,
+  ) {
+    final $$TicketOverridesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ticketOverrides,
+      getReferencedColumn: (t) => t.logId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TicketOverridesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ticketOverrides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TrainLogsTableTableManager
@@ -2528,7 +3317,10 @@ class $$TrainLogsTableTableManager
           $$TrainLogsTableUpdateCompanionBuilder,
           (TrainLog, $$TrainLogsTableReferences),
           TrainLog,
-          PrefetchHooks Function({bool locomotivesRefs})
+          PrefetchHooks Function({
+            bool locomotivesRefs,
+            bool ticketOverridesRefs,
+          })
         > {
   $$TrainLogsTableTableManager(_$AppDatabase db, $TrainLogsTable table)
     : super(
@@ -2571,6 +3363,12 @@ class $$TrainLogsTableTableManager
                 Value<String> emuDepot = const Value.absent(),
                 Value<String> carNumber = const Value.absent(),
                 Value<int> arrivalDayOffset = const Value.absent(),
+                Value<String> price = const Value.absent(),
+                Value<String> gate = const Value.absent(),
+                Value<String> buyMarks = const Value.absent(),
+                Value<String> saleLocation = const Value.absent(),
+                Value<String> serialNumber = const Value.absent(),
+                Value<String> ticketNumber = const Value.absent(),
               }) => TrainLogsCompanion(
                 id: id,
                 trainNumber: trainNumber,
@@ -2600,6 +3398,12 @@ class $$TrainLogsTableTableManager
                 emuDepot: emuDepot,
                 carNumber: carNumber,
                 arrivalDayOffset: arrivalDayOffset,
+                price: price,
+                gate: gate,
+                buyMarks: buyMarks,
+                saleLocation: saleLocation,
+                serialNumber: serialNumber,
+                ticketNumber: ticketNumber,
               ),
           createCompanionCallback:
               ({
@@ -2631,6 +3435,12 @@ class $$TrainLogsTableTableManager
                 Value<String> emuDepot = const Value.absent(),
                 Value<String> carNumber = const Value.absent(),
                 Value<int> arrivalDayOffset = const Value.absent(),
+                Value<String> price = const Value.absent(),
+                Value<String> gate = const Value.absent(),
+                Value<String> buyMarks = const Value.absent(),
+                Value<String> saleLocation = const Value.absent(),
+                Value<String> serialNumber = const Value.absent(),
+                Value<String> ticketNumber = const Value.absent(),
               }) => TrainLogsCompanion.insert(
                 id: id,
                 trainNumber: trainNumber,
@@ -2660,6 +3470,12 @@ class $$TrainLogsTableTableManager
                 emuDepot: emuDepot,
                 carNumber: carNumber,
                 arrivalDayOffset: arrivalDayOffset,
+                price: price,
+                gate: gate,
+                buyMarks: buyMarks,
+                saleLocation: saleLocation,
+                serialNumber: serialNumber,
+                ticketNumber: ticketNumber,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -2669,36 +3485,63 @@ class $$TrainLogsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({locomotivesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (locomotivesRefs) db.locomotives],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (locomotivesRefs)
-                    await $_getPrefetchedData<
-                      TrainLog,
-                      $TrainLogsTable,
-                      Locomotive
-                    >(
-                      currentTable: table,
-                      referencedTable: $$TrainLogsTableReferences
-                          ._locomotivesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$TrainLogsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).locomotivesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.logId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({locomotivesRefs = false, ticketOverridesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (locomotivesRefs) db.locomotives,
+                    if (ticketOverridesRefs) db.ticketOverrides,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (locomotivesRefs)
+                        await $_getPrefetchedData<
+                          TrainLog,
+                          $TrainLogsTable,
+                          Locomotive
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TrainLogsTableReferences
+                              ._locomotivesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TrainLogsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).locomotivesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.logId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (ticketOverridesRefs)
+                        await $_getPrefetchedData<
+                          TrainLog,
+                          $TrainLogsTable,
+                          TicketOverride
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TrainLogsTableReferences
+                              ._ticketOverridesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TrainLogsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).ticketOverridesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.logId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -2715,7 +3558,7 @@ typedef $$TrainLogsTableProcessedTableManager =
       $$TrainLogsTableUpdateCompanionBuilder,
       (TrainLog, $$TrainLogsTableReferences),
       TrainLog,
-      PrefetchHooks Function({bool locomotivesRefs})
+      PrefetchHooks Function({bool locomotivesRefs, bool ticketOverridesRefs})
     >;
 typedef $$LocomotivesTableCreateCompanionBuilder =
     LocomotivesCompanion Function({
@@ -3049,6 +3892,311 @@ typedef $$LocomotivesTableProcessedTableManager =
       Locomotive,
       PrefetchHooks Function({bool logId})
     >;
+typedef $$TicketOverridesTableCreateCompanionBuilder =
+    TicketOverridesCompanion Function({
+      Value<int> logId,
+      Value<String> overridesJson,
+      Value<String> bgImagePath,
+      Value<String> bgMode,
+    });
+typedef $$TicketOverridesTableUpdateCompanionBuilder =
+    TicketOverridesCompanion Function({
+      Value<int> logId,
+      Value<String> overridesJson,
+      Value<String> bgImagePath,
+      Value<String> bgMode,
+    });
+
+final class $$TicketOverridesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $TicketOverridesTable, TicketOverride> {
+  $$TicketOverridesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TrainLogsTable _logIdTable(_$AppDatabase db) =>
+      db.trainLogs.createAlias('ticket_overrides__log_id__train_logs__id');
+
+  $$TrainLogsTableProcessedTableManager get logId {
+    final $_column = $_itemColumn<int>('log_id')!;
+
+    final manager = $$TrainLogsTableTableManager(
+      $_db,
+      $_db.trainLogs,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_logIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TicketOverridesTableFilterComposer
+    extends Composer<_$AppDatabase, $TicketOverridesTable> {
+  $$TicketOverridesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get overridesJson => $composableBuilder(
+    column: $table.overridesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bgImagePath => $composableBuilder(
+    column: $table.bgImagePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bgMode => $composableBuilder(
+    column: $table.bgMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TrainLogsTableFilterComposer get logId {
+    final $$TrainLogsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.logId,
+      referencedTable: $db.trainLogs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrainLogsTableFilterComposer(
+            $db: $db,
+            $table: $db.trainLogs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TicketOverridesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TicketOverridesTable> {
+  $$TicketOverridesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get overridesJson => $composableBuilder(
+    column: $table.overridesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bgImagePath => $composableBuilder(
+    column: $table.bgImagePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bgMode => $composableBuilder(
+    column: $table.bgMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TrainLogsTableOrderingComposer get logId {
+    final $$TrainLogsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.logId,
+      referencedTable: $db.trainLogs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrainLogsTableOrderingComposer(
+            $db: $db,
+            $table: $db.trainLogs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TicketOverridesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TicketOverridesTable> {
+  $$TicketOverridesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get overridesJson => $composableBuilder(
+    column: $table.overridesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bgImagePath => $composableBuilder(
+    column: $table.bgImagePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bgMode =>
+      $composableBuilder(column: $table.bgMode, builder: (column) => column);
+
+  $$TrainLogsTableAnnotationComposer get logId {
+    final $$TrainLogsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.logId,
+      referencedTable: $db.trainLogs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrainLogsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.trainLogs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TicketOverridesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TicketOverridesTable,
+          TicketOverride,
+          $$TicketOverridesTableFilterComposer,
+          $$TicketOverridesTableOrderingComposer,
+          $$TicketOverridesTableAnnotationComposer,
+          $$TicketOverridesTableCreateCompanionBuilder,
+          $$TicketOverridesTableUpdateCompanionBuilder,
+          (TicketOverride, $$TicketOverridesTableReferences),
+          TicketOverride,
+          PrefetchHooks Function({bool logId})
+        > {
+  $$TicketOverridesTableTableManager(
+    _$AppDatabase db,
+    $TicketOverridesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TicketOverridesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TicketOverridesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TicketOverridesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> logId = const Value.absent(),
+                Value<String> overridesJson = const Value.absent(),
+                Value<String> bgImagePath = const Value.absent(),
+                Value<String> bgMode = const Value.absent(),
+              }) => TicketOverridesCompanion(
+                logId: logId,
+                overridesJson: overridesJson,
+                bgImagePath: bgImagePath,
+                bgMode: bgMode,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> logId = const Value.absent(),
+                Value<String> overridesJson = const Value.absent(),
+                Value<String> bgImagePath = const Value.absent(),
+                Value<String> bgMode = const Value.absent(),
+              }) => TicketOverridesCompanion.insert(
+                logId: logId,
+                overridesJson: overridesJson,
+                bgImagePath: bgImagePath,
+                bgMode: bgMode,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TicketOverridesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({logId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (logId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.logId,
+                                referencedTable:
+                                    $$TicketOverridesTableReferences
+                                        ._logIdTable(db),
+                                referencedColumn:
+                                    $$TicketOverridesTableReferences
+                                        ._logIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TicketOverridesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TicketOverridesTable,
+      TicketOverride,
+      $$TicketOverridesTableFilterComposer,
+      $$TicketOverridesTableOrderingComposer,
+      $$TicketOverridesTableAnnotationComposer,
+      $$TicketOverridesTableCreateCompanionBuilder,
+      $$TicketOverridesTableUpdateCompanionBuilder,
+      (TicketOverride, $$TicketOverridesTableReferences),
+      TicketOverride,
+      PrefetchHooks Function({bool logId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3057,4 +4205,6 @@ class $AppDatabaseManager {
       $$TrainLogsTableTableManager(_db, _db.trainLogs);
   $$LocomotivesTableTableManager get locomotives =>
       $$LocomotivesTableTableManager(_db, _db.locomotives);
+  $$TicketOverridesTableTableManager get ticketOverrides =>
+      $$TicketOverridesTableTableManager(_db, _db.ticketOverrides);
 }

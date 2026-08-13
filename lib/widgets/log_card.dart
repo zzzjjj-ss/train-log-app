@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 
 import '../data/database.dart';
 import '../providers/providers.dart';
+import '../screens/ticket_preview_screen.dart';
 import '../utils/search.dart';
+import 'ticket_card.dart';
 
 /// 单条运转记录的卡片组件。
 /// 传入一条 TrainLog，渲染成一站漂亮的卡片。
@@ -24,6 +26,11 @@ class LogCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final dateStr = DateFormat('yyyy年M月d日').format(log.date);
+
+    // 车票样式：设置里开启后，整张卡片渲染为车票模板
+    if (ref.watch(settingsProvider).cardStyle == 'ticket') {
+      return _buildTicketCard(context, ref);
+    }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -151,6 +158,44 @@ class LogCard extends ConsumerWidget {
               // 搜索高亮标签（搜索时显示匹配原因）
               if (searchHits.isNotEmpty) ...[_SearchHighlight(hits: searchHits)],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 车票样式卡片：渲染为定稿车票模板，点击仍进入编辑
+  Widget _buildTicketCard(BuildContext context, WidgetRef ref) {
+    final screenW = MediaQuery.sizeOf(context).width;
+    final w = (screenW - 32 - 16).clamp(240.0, 480.0); // 留出卡片边距，限制最大宽
+    final settings = ref.watch(settingsProvider);
+    final idCard = [
+      if (settings.idCardPrefix.isNotEmpty) settings.idCardPrefix,
+      if (settings.idCardPrefix.isNotEmpty) '****',
+      if (settings.idCardSuffix.isNotEmpty) settings.idCardSuffix,
+    ].join();
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      elevation: 0,
+      color: Colors.transparent,
+      clipBehavior: Clip.none,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        onLongPress: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TicketPreviewScreen(log: log),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Center(
+            child: TicketCard(
+              log: log,
+              width: w,
+              idCardText: idCard,
+              passengerName: settings.passengerName,
+            ),
           ),
         ),
       ),

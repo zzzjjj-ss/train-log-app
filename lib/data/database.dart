@@ -94,6 +94,26 @@ class TrainLogs extends Table {
 
   /// 到达日偏移：0=当天，1=次日，2=第3天（跨天行程，v5）
   IntColumn get arrivalDayOffset => integer().withDefault(const Constant(0))();
+
+  // ============ 购票信息（v7） ============
+
+  /// 票价，如 "54.5元"（存文本，保留 ￥ 等格式）
+  TextColumn get price => text().withDefault(const Constant(''))();
+
+  /// 检票口，如 "22"（对应车票右上"检票口22"）
+  TextColumn get gate => text().withDefault(const Constant(''))();
+
+  /// 购票标记：可组合 "网"(网购)/"孩"(儿童)/"折"(折扣)，如 "孩网折"
+  TextColumn get buyMarks => text().withDefault(const Constant(''))();
+
+  /// 发售地，如 "北京南售"
+  TextColumn get saleLocation => text().withDefault(const Constant(''))();
+
+  /// 流水号，如 "R093443"（随机生成，可手工改）
+  TextColumn get serialNumber => text().withDefault(const Constant(''))();
+
+  /// 车票编号，如 "10010301110403F067846"（随机生成，可手工改）
+  TextColumn get ticketNumber => text().withDefault(const Constant(''))();
 }
 
 /// 本务机车表：一趟车可有多台机车（中途换挂 / 双机重联）
@@ -117,8 +137,27 @@ class Locomotives extends Table {
   TextColumn get haulingSection => text().withDefault(const Constant(''))();
 }
 
+/// 车票自定义覆盖层（v8）：每张票一条，只影响车票显示，不改原记录。
+/// overridesJson 存票面文字覆盖（字段名→自定义文本）；bgImagePath/bgMode 存背景图。
+class TicketOverrides extends Table {
+  /// 所属运转记录 id（主键，每票一条）
+  IntColumn get logId => integer().references(TrainLogs, #id)();
+
+  /// 文字覆盖 JSON：{"trainNumber":"G1234","price":"88元",...}，空 {} 表示无覆盖
+  TextColumn get overridesJson => text().withDefault(const Constant('{}'))();
+
+  /// 背景图文件路径（应用文档目录），空表示用默认浅蓝背景
+  TextColumn get bgImagePath => text().withDefault(const Constant(''))();
+
+  /// 背景映射模式：cover / contain / fill
+  TextColumn get bgMode => text().withDefault(const Constant('cover'))();
+
+  @override
+  Set<Column> get primaryKey => {logId};
+}
+
 /// 数据库主体。drift 会根据这里的定义生成 _\$AppDatabase 基类。
-@DriftDatabase(tables: [TrainLogs, Locomotives])
+@DriftDatabase(tables: [TrainLogs, Locomotives, TicketOverrides])
 class AppDatabase extends _$AppDatabase {
   /// [executor] 可选：正常运行时用 drift_flutter 自动配置的数据库；
   /// 测试时可以传入内存数据库 NativeDatabase.memory() 来隔离数据。
@@ -126,7 +165,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'train_log_app'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 8;
 
   /// 数据库迁移：自愈式 —— 先检查列是否存在，缺失才添加。
   /// 解决"迁移中断导致 duplicate column"问题（列已加但版本号未更新时，
@@ -163,6 +202,17 @@ class AppDatabase extends _$AppDatabase {
       }
       // v6：旧数据搬迁 —— 把整趟车的牵引区间写入该趟车第一台机车
       await _migrateOldHaulingSection(m);
+      // v7：购票信息字段（票价/检票口/购票标记/发售地/流水号/编号）
+      await _addColumnIfMissing(m, 'price', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'gate', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'buy_marks', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'sale_location', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'serial_number', "TEXT NOT NULL DEFAULT ''");
+      await _addColumnIfMissing(m, 'ticket_number', "TEXT NOT NULL DEFAULT ''");
+      // v8：车票自定义覆盖层表
+      if (from < 8) {
+        await m.createTable(ticketOverrides);
+      }
     },
   );
 
@@ -234,7 +284,26 @@ class AppDatabase extends _$AppDatabase {
   /// 按 id 删除一条记录（连带删除其本务机车记录）
   Future<void> deleteLog(int id) async {
     await (delete(locomotives)..where((l) => l.logId.equals(id))).go();
+    await (delete(ticketOverrides)..where((t) => t.logId.equals(id))).go();
     await (delete(trainLogs)..where((t) => t.id.equals(id))).go();
+  }
+
+  // ============ 车票自定义覆盖层（v8） ============
+
+  /// 读取某条记录的车票覆盖层（无则返回 null）
+  Future<TicketOverride?> getTicketOverrides(int logId) async {
+    final query = select(ticketOverrides)..where((t) => t.logId.equals(logId));
+    return query.getSingleOrNull();
+  }
+
+  /// 保存/更新覆盖层（按 logId upsert）
+  Future<void> saveTicketOverrides(TicketOverridesCompanion entry) async {
+    await into(ticketOverrides).insertOnConflictUpdate(entry);
+  }
+
+  /// 清除某条记录的覆盖层（重置回原始车票）
+  Future<void> clearTicketOverrides(int logId) async {
+    await (delete(ticketOverrides)..where((t) => t.logId.equals(logId))).go();
   }
 
   /// 监听某条记录的本务机车列表（按 id 排序）

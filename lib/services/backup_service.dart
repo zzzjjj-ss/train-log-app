@@ -86,6 +86,13 @@ Map<String, dynamic> _logToJson(TrainLog l) => {
       'emuDepot': l.emuDepot,
       'carNumber': l.carNumber,
       'arrivalDayOffset': l.arrivalDayOffset,
+      // v7 购票信息
+      'price': l.price,
+      'gate': l.gate,
+      'buyMarks': l.buyMarks,
+      'saleLocation': l.saleLocation,
+      'serialNumber': l.serialNumber,
+      'ticketNumber': l.ticketNumber,
     };
 
 Map<String, dynamic> _locoToJson(Locomotive l, int logId) => {
@@ -127,6 +134,13 @@ TrainLogsCompanion _logFromJson(Map<String, dynamic> m) {
     emuDepot: Value((m['emuDepot'] as String?) ?? ''),
     carNumber: Value((m['carNumber'] as String?) ?? ''),
     arrivalDayOffset: Value((m['arrivalDayOffset'] as int?) ?? 0),
+    // v7 购票信息
+    price: Value((m['price'] as String?) ?? ''),
+    gate: Value((m['gate'] as String?) ?? ''),
+    buyMarks: Value((m['buyMarks'] as String?) ?? ''),
+    saleLocation: Value((m['saleLocation'] as String?) ?? ''),
+    serialNumber: Value((m['serialNumber'] as String?) ?? ''),
+    ticketNumber: Value((m['ticketNumber'] as String?) ?? ''),
   );
 }
 

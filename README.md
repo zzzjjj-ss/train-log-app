@@ -13,6 +13,9 @@
 - 动车组型号自动补全（内置常见车型库），选中后自动填写编组和定员
 - 支持记录多台本务机车（换挂/重联），每台可分别填写牵引区间
 - 按车次前缀自动识别列车类别（高铁/动车/城际/市郊/普速），列表支持组合筛选
+- **车票样式**：每条记录都能渲染成一张仿真车票，长按可看大图、存相册、分享
+- 购票信息：票价、检票口、购票标记（网购/儿童/折扣）、流水号与编号自动生成
+- 数据导出 / 导入（JSON 备份），换手机也不丢记录
 - 多种主题色与深色模式，可跟随系统
 
 所有数据保存在手机本地（SQLite），离线可用，无需联网。
@@ -65,11 +68,14 @@ lib/
 │   ├── home_screen.dart       # 主页
 │   ├── log_form_screen.dart   # 记录表单
 │   ├── settings_screen.dart   # 设置
-│   └── about_screen.dart      # 关于
+│   ├── about_screen.dart      # 关于
+│   └── ticket_preview_screen.dart  # 车票大图预览
 ├── utils/
-│   └── train_classify.dart    # 车次前缀分类
+│   ├── train_classify.dart    # 车次前缀分类
+│   └── ticket_gen.dart        # 流水号/编号生成
 └── widgets/
-    └── log_card.dart          # 记录卡片
+    ├── log_card.dart          # 记录卡片
+    └── ticket_card.dart       # 车票样式卡片（CustomPainter）
 ```
 
 ## 数据说明
