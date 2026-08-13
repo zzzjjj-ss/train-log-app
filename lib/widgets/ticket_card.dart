@@ -311,8 +311,8 @@ class _TicketPainter extends CustomPainter {
     for (final s in segs) {
       final tp = _tp(s.$1, s.$2, sx,
           weight: s.$3, family: s.$4 ? 'NotoSerifSC' : 'NotoSansSC');
-      // 小字顶部对齐（保持偏上，与 Python 一致）
-      tp.paint(canvas, Offset(X(cx), Y(y)));
+      // 小字垂直居中于大字（不偏高不偏低）
+      tp.paint(canvas, Offset(X(cx), Y(y + (maxSize - s.$2) * 0.58)));
       final w = tp.width / scaleX;
       cx += w + 0.3;
       total += w + 0.3;
@@ -364,7 +364,7 @@ class _TicketPainter extends CustomPainter {
 
     final tMain = _tp(depMain, 9.5, sx);
     final wMain = tMain.width / scaleX;
-    final wTail = depTail.isEmpty ? 0.0 : (_tp(depTail, 5.5, sx, family: 'NotoSerifSC').width / scaleX + 0.5);
+    final wTail = depTail.isEmpty ? 0.0 : (_tp(depTail, 5.5, sx, family: 'NotoSerifSC').width / scaleX + 1.5);
     final ws = wMain + wTail;
 
     final tc = _tp(trainNo, 9.5, sx, family: 'NotoSerifSC');
@@ -378,25 +378,25 @@ class _TicketPainter extends CustomPainter {
     tMain.paint(canvas, Offset(X(xDep), Y(104)));
     if (depTail.isNotEmpty) {
       final depTp = _tp(depTail, 5.5, sx, family: 'NotoSerifSC');
-      _mark('departureStation', depTp, xDep + wMain + 0.5, 104 + (9.5 - 5.5),
+      _mark('departureStation', depTp, xDep + wMain + 1.5, 104 + (9.5 - 5.5),
           scaleX, scaleY);
-      depTp.paint(canvas, Offset(X(xDep + wMain + 0.5), Y(104 + (9.5 - 5.5))));
+      depTp.paint(canvas, Offset(X(xDep + wMain + 1.5), Y(104 + (9.5 - 5.5))));
     }
 
     // 到达站（右）：对称
     final wm2 = _tp(arrMain, 9.5, sx).width / scaleX;
     final wt2 =
-        arrTail.isEmpty ? 0.0 : (_tp(arrTail, 5.5, sx, family: 'NotoSerifSC').width / scaleX + 0.5);
+        arrTail.isEmpty ? 0.0 : (_tp(arrTail, 5.5, sx, family: 'NotoSerifSC').width / scaleX + 1.5);
     final xArr = (162 + xc1 - (wm2 + wt2)) / 2;
     final arrTp = _tp(arrMain, 9.5, sx);
     _mark('arrivalStation', arrTp, xArr, 104, scaleX, scaleY);
     arrTp.paint(canvas, Offset(X(xArr), Y(104)));
     if (arrTail.isNotEmpty) {
       final arrTailTp = _tp(arrTail, 5.5, sx, family: 'NotoSerifSC');
-      _mark('arrivalStation', arrTailTp, xArr + wm2 + 0.5, 104 + (9.5 - 5.5),
+      _mark('arrivalStation', arrTailTp, xArr + wm2 + 1.5, 104 + (9.5 - 5.5),
           scaleX, scaleY);
       arrTailTp.paint(
-          canvas, Offset(X(xArr + wm2 + 0.5), Y(104 + (9.5 - 5.5))));
+          canvas, Offset(X(xArr + wm2 + 1.5), Y(104 + (9.5 - 5.5))));
     }
 
     // 车次
@@ -433,11 +433,11 @@ class _TicketPainter extends CustomPainter {
     } else {
       dateSegs = [
         (DateFormat('yyyy').format(log.date), 6.5, FontWeight.normal, false),
-        ('年', 4.5, FontWeight.normal, true),
+        ('年', 4.0, FontWeight.normal, true),
         (DateFormat('MM').format(log.date), 6.5, FontWeight.normal, false),
-        ('月', 4.5, FontWeight.normal, true),
+        ('月', 4.0, FontWeight.normal, true),
         (DateFormat('dd').format(log.date), 6.5, FontWeight.normal, false),
-        ('日', 4.5, FontWeight.normal, true),
+        ('日', 4.0, FontWeight.normal, true),
       ];
     }
     final dateW = _drawRich(canvas, dateSegs, 20, 121, sx, X, Y, key: 'date');
@@ -445,7 +445,7 @@ class _TicketPainter extends CustomPainter {
       final timeSegs = <(String, double, FontWeight, bool)>[
         (' ', 6, FontWeight.normal, false),
         (timeStr, 6.5, FontWeight.normal, false),
-        ('开', 4.5, FontWeight.normal, true),
+        ('开', 4.0, FontWeight.normal, true),
       ];
       _drawRich(canvas, timeSegs, 20 + dateW, 121, sx, X, Y,
           key: 'departureTime');
@@ -460,7 +460,7 @@ class _TicketPainter extends CustomPainter {
         seatSegs.add((' ', 5, FontWeight.normal, false));
       }
       seatSegs.add((seat, 6.5, FontWeight.normal, false));
-      seatSegs.add(('号', 4.5, FontWeight.normal, true));
+      seatSegs.add(('号', 4.0, FontWeight.normal, true));
     }
     final sw = seatSegs.isEmpty ? 0.0 : _richW(seatSegs, sx, scaleX);
     if (carriage.isNotEmpty) {
@@ -469,7 +469,7 @@ class _TicketPainter extends CustomPainter {
           : carriage;
       final carSegs = <(String, double, FontWeight, bool)>[
         (c, 6.5, FontWeight.normal, false),
-        ('车', 4.5, FontWeight.normal, true),
+        ('车', 4.0, FontWeight.normal, true),
       ];
       final cw = _richW(carSegs, sx, scaleX);
       // 车厢号右端 = 座位号左端 - 0.5；无座位时右对齐 138
@@ -594,7 +594,7 @@ class _TicketPainter extends CustomPainter {
     final ly1 = boxY0 + p;
     final ly2 = ly1 + h1 + gap;
     const by1 = 165.7;
-    final bx1 = boxX0 + boxW + 24;
+    final bx1 = 45 + boxW; // 右边往里收，与左边框对称
     final textCxVb = 36.5 + boxW / 2; // 文字中心（v52 原值，不随边框移动）
 
     final dashPaint = Paint()

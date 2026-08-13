@@ -5,6 +5,12 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.4.1-beta] - 2026-08-13
+
+### 修复
+- 小字（年月日开车号元）垂直对齐微调，更贴近真实车票
+- 虚线框左右对称
+
 ## [0.4.0-beta] - 2026-08-13
 
 ### 新增

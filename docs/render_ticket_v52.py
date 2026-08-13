@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from PIL import Image, ImageDraw, ImageFont
 import math, random
+import sys
 
 random.seed(7)
 SCALE = 16
@@ -33,9 +34,11 @@ def w(txt, size, sans=False):
 def mixed(parts, x, y, anchor='la'):
     total = sum(w(t,s,sn) for t,s,sn in parts) + 0.3*max(0,len(parts)-1)
     if anchor == 'ra': x -= total
+    max_sz = max(s for _,s,_ in parts)
     cx = x
     for (t,s,sn) in parts:
-        text(t, cx, y, s, sans=sn); cx += w(t,s,sn) + 0.3
+        # 小字垂直居中于大字
+        text(t, cx, y + (max_sz - s)*0.75, s, sans=sn); cx += w(t,s,sn) + 0.3
     return total
 def mixed_w(parts):
     return sum(w(t,s,sn) for t,s,sn in parts) + 0.3*max(0,len(parts)-1)
@@ -97,24 +100,24 @@ text('检票口22', 159, 94, 6, BLACK, anchor='ra')
 BASE = 99; big = 9.5; small = 5.5
 wc = w('C2565', big)
 xc0 = 86 - wc/2; xc1 = 86 + wc/2
-ws_bj = w('北京南', big, sans=True) + 0.5 + w('站', small)
-ws_tj = w('天　津', big, sans=True) + 0.5 + w('站', small)
+ws_bj = w('北京南', big, sans=True) + 1.5 + w('站', small)
+ws_tj = w('天　津', big, sans=True) + 1.5 + w('站', small)
 x_bj = (xc0 + 9 - ws_bj) / 2
 x_tj = (162 + xc1 - ws_tj) / 2
 text('北京南', x_bj, BASE, big, BLACK, sans=True)
-text('站', x_bj + w('北京南',big,True) + 0.5, BASE + (big-small), small, BLACK)
+text('站', x_bj + w('北京南',big,True) + 1.5, BASE + (big-small), small, BLACK)
 text('C2565', 86, BASE, big, BLACK, anchor='ma')
 text('天　津', x_tj, BASE, big, BLACK, sans=True)
-text('站', x_tj + w('天　津',big,True) + 0.5, BASE + (big-small), small, BLACK)
+text('站', x_tj + w('天　津',big,True) + 1.5, BASE + (big-small), small, BLACK)
 arrow_under(86, BASE + big, wc)
 # 拼音居中于站名主体正下方
 text('Beijingnan', x_bj + (w('北京南',big,True) - w('Beijingnan',4))/2, 113.5, 4, BLACK)
 text('Tianjin', x_tj + (w('天　津',big,True) - w('Tianjin',4))/2, 113.5, 4, BLACK)
 L = 20
-mixed([('2019',6.5,True),('年',4.5,False),('04',6.5,True),('月',4.5,False),('03',6.5,True),('日',4.5,False),(' ',5,False),('09:36',6.5,True),('开',4.5,False)], L, 119)
-mixed([('02',6.5,True),('车',4.5,False),(' ',5,False),('03C',6.5,True),('号',4.5,False)], 138, 119, anchor='ra')
-mixed([('￥',5,False),('54.5',6,True),('元',4.5,False)], L, 126.5)
-net_x = L + mixed_w([('2019',6.5,True),('年',4.5,False),('04',6.5,True),('月',4.5,False),('03',6.5,True),('日',4.5,False),(' ',5,False)])
+mixed([('2019',6.5,True),('年',4.0,False),('04',6.5,True),('月',4.0,False),('03',6.5,True),('日',4.0,False),(' ',5,False),('09:36',6.5,True),('开',4.0,False)], L, 119)
+mixed([('02',6.5,True),('车',4.0,False),(' ',5,False),('035',6.5,True),('号',4.0,False)], 138, 119, anchor='ra')
+mixed([('￥',5,False),('54.5',6,True),('元',4.0,False)], L, 126.5)
+net_x = L + mixed_w([('2019',6.5,True),('年',4.0,False),('04',6.5,True),('月',4.0,False),('03',6.5,True),('日',4.0,False),(' ',5,False)])
 text('网', net_x, 126.5, 5, BLACK)
 text('二等座', 138, 126.5, 5, BLACK, anchor='ra')
 text('限乘当日当次车', L, 133.5, 4.5, BLACK)
@@ -128,7 +131,7 @@ box_w = max(w1, w2) + 2*p
 box_h = h1*2 + gap + 2*p
 box_x0 = 28.0; box_y0 = 154.0
 cx = 36.5 + box_w/2  # 文字中心固定(v52原值)，只移边框
-bx1 = box_x0 + box_w + 24
+bx1 = 45 + box_w  # 右边往里收，与左边框对称
 ly1 = box_y0 + 0.2
 ly2 = ly1 + h1 + gap
 by1 = 165.7
@@ -139,5 +142,5 @@ fake_qr(138, 144, 160, 166)
 text('10010301110403F067846 北京南售', 12, 169, 5, BLACK)
 
 img = img.resize((W//2, H//2), Image.LANCZOS)
-img.save('/home/zhang/Desktop/车票模板-final-v52.png')
+img.save(sys.argv[1] if len(sys.argv) > 1 else '/home/zhang/Desktop/车票模板-final-v52.png')
 print('saved v52', W, 'x', H)
