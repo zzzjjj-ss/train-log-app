@@ -3,7 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 
 /// 构建时间（构建时通过 --dart-define=BUILD_TIME 注入，未注入用回退值）
-const String _buildTime = String.fromEnvironment('BUILD_TIME', defaultValue: '2026-08-13 18:38:32');
+const String _buildTime = String.fromEnvironment('BUILD_TIME', defaultValue: '2026-08-16 12:30:00');
 /// 关于页：App 图标 + 名称 + 简介 + 版本 + 链接 + 构建时间/版权
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -39,7 +39,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'v0.4.1-beta',
+                    'v0.5.0-beta',
                     style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 12),
