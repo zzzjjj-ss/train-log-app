@@ -14,6 +14,8 @@ const List<({String key, String label})> kTicketTextFieldKeys = [
   (key: 'trainNumber', label: '车次'),
   (key: 'departureStation', label: '出发站'),
   (key: 'arrivalStation', label: '到达站'),
+  (key: 'depSuffix', label: '出发站后缀字'),
+  (key: 'arrSuffix', label: '到达站后缀字'),
   (key: 'date', label: '日期'),
   (key: 'departureTime', label: '发车时间'),
   (key: 'carriage', label: '车厢'),
@@ -356,10 +358,10 @@ class _TicketPainter extends CustomPainter {
     // 站名主体：2 字时中间加空格，视觉中心平衡（如"天津"→"天 津"）
     final depRaw = dep.endsWith('站') ? dep.substring(0, dep.length - 1) : dep;
     final depMain = depRaw.length == 2 ? '${depRaw[0]}　${depRaw[1]}' : depRaw;
-    final depTail = '站'; // 模板固定显示站字小字
+    final depTail = _ov('depSuffix', '站'); // 站字可覆盖
     final arrRaw = arr.endsWith('站') ? arr.substring(0, arr.length - 1) : arr;
     final arrMain = arrRaw.length == 2 ? '${arrRaw[0]}　${arrRaw[1]}' : arrRaw;
-    final arrTail = '站';
+    final arrTail = _ov('arrSuffix', '站');
     final trainNo = _ov('trainNumber', log.trainNumber).trim();
 
     final tMain = _tp(depMain, 9.5, sx);
@@ -659,5 +661,12 @@ class _TicketPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _TicketPainter oldDelegate) => oldDelegate.log != log;
+  @override
+  bool shouldRepaint(covariant _TicketPainter oldDelegate) =>
+      oldDelegate.log != log ||
+      oldDelegate.idCardText != idCardText ||
+      oldDelegate.passengerName != passengerName ||
+      oldDelegate.textOverrides != textOverrides ||
+      oldDelegate.bgImage != bgImage ||
+      oldDelegate.bgMode != bgMode;
 }

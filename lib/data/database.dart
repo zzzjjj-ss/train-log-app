@@ -296,6 +296,12 @@ class AppDatabase extends _$AppDatabase {
     return query.getSingleOrNull();
   }
 
+  /// 监听某条记录的车票覆盖层（覆盖表变化自动推送，无需手动刷新）
+  Stream<TicketOverride?> watchTicketOverrides(int logId) {
+    final query = select(ticketOverrides)..where((t) => t.logId.equals(logId));
+    return query.watchSingleOrNull();
+  }
+
   /// 保存/更新覆盖层（按 logId upsert）
   Future<void> saveTicketOverrides(TicketOverridesCompanion entry) async {
     await into(ticketOverrides).insertOnConflictUpdate(entry);

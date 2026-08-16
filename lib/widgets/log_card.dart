@@ -169,6 +169,7 @@ class LogCard extends ConsumerWidget {
     final screenW = MediaQuery.sizeOf(context).width;
     final w = (screenW - 32 - 16).clamp(240.0, 480.0); // 留出卡片边距，限制最大宽
     final settings = ref.watch(settingsProvider);
+    final render = ref.watch(ticketRenderProvider(log.id)).valueOrNull;
     final idCard = [
       if (settings.idCardPrefix.isNotEmpty) settings.idCardPrefix,
       if (settings.idCardPrefix.isNotEmpty) '****',
@@ -195,6 +196,9 @@ class LogCard extends ConsumerWidget {
               width: w,
               idCardText: idCard,
               passengerName: settings.passengerName,
+              textOverrides: render?.textOverrides,
+              bgImage: render?.bgImage,
+              bgMode: render?.bgMode ?? 'cover',
             ),
           ),
         ),

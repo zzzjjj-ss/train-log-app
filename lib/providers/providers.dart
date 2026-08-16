@@ -176,32 +176,35 @@ class TicketRenderData {
 
 /// 加载某条记录的车票覆盖层（文字覆盖 + 背景图解码）。
 /// 无覆盖返回 null；编辑保存后调用 ref.invalidate 刷新。
+/// 加载某条记录的车票覆盖层（文字覆盖 + 背景图解码）。
+/// 用 StreamProvider 监听覆盖表，DB 变化自动推送，无需手动 invalidate。
 final ticketRenderProvider =
-    FutureProvider.family<TicketRenderData?, int>((ref, logId) async {
+    StreamProvider.family<TicketRenderData?, int>((ref, logId) async* {
   final db = ref.watch(databaseProvider);
-  final ov = await db.getTicketOverrides(logId);
-  if (ov == null) return null;
+  yield* db.watchTicketOverrides(logId).asyncMap((ov) async {
+    if (ov == null) return null;
 
-  Map<String, String> text = {};
-  if (ov.overridesJson.trim().isNotEmpty) {
-    try {
-      final decoded = jsonDecode(ov.overridesJson);
-      if (decoded is Map) {
-        text = decoded.map((k, v) => MapEntry(k.toString(), v.toString()));
-      }
-    } catch (_) {}
-  }
+    Map<String, String> text = {};
+    if (ov.overridesJson.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(ov.overridesJson);
+        if (decoded is Map) {
+          text = decoded.map((k, v) => MapEntry(k.toString(), v.toString()));
+        }
+      } catch (_) {}
+    }
 
-  ui.Image? img;
-  if (ov.bgImagePath.isNotEmpty) {
-    try {
-      final bytes = await File(ov.bgImagePath).readAsBytes();
-      img = await decodeImageFromList(bytes);
-    } catch (_) {}
-  }
-  return TicketRenderData(
-    textOverrides: text,
-    bgImage: img,
-    bgMode: ov.bgMode,
-  );
+    ui.Image? img;
+    if (ov.bgImagePath.isNotEmpty) {
+      try {
+        final bytes = await File(ov.bgImagePath).readAsBytes();
+        img = await decodeImageFromList(bytes);
+      } catch (_) {}
+    }
+    return TicketRenderData(
+      textOverrides: text,
+      bgImage: img,
+      bgMode: ov.bgMode,
+    );
+  });
 });

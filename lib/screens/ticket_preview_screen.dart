@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../data/database.dart';
 import '../providers/providers.dart';
 import '../widgets/ticket_card.dart';
+import 'ticket_edit_screen.dart';
 
 /// 车票大图预览页：长按车票卡片进入。
 /// 右上角提供「保存为图片」和「分享」。
@@ -25,7 +26,21 @@ class TicketPreviewScreen extends ConsumerStatefulWidget {
 
 class _TicketPreviewScreenState extends ConsumerState<TicketPreviewScreen> {
   final _boundaryKey = GlobalKey();
+  final _transform = TransformationController();
   bool _busy = false;
+
+  @override
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  /// 缩放控制（1x ~ 6x）
+  void _zoomBy(double factor) {
+    final scale =
+        (_transform.value.getMaxScaleOnAxis() * factor).clamp(1.0, 6.0);
+    _transform.value = Matrix4.diagonal3Values(scale, scale, 1);
+  }
 
   /// 把车票渲染成 PNG 字节
   Future<Uint8List?> _capture() async {
@@ -88,9 +103,48 @@ class _TicketPreviewScreenState extends ConsumerState<TicketPreviewScreen> {
     }
   }
 
+
+  /// 打开编辑页；返回后 Stream 自动刷新
+  Future<void> _openEditor() async {
+    final existing =
+        await ref.read(databaseProvider).getTicketOverrides(widget.log.id);
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TicketEditScreen(log: widget.log, existing: existing),
+      ),
+    );
+    ref.invalidate(ticketRenderProvider(widget.log.id));
+  }
+
+  /// 重置：确认后清除覆盖层，恢复原始车票（Stream 自动刷新）
+  Future<void> _reset() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('重置车票？'),
+        content: const Text('将清除所有自定义文字和背景图，恢复原始车票。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('重置'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(databaseProvider).clearTicketOverrides(widget.log.id);
+    ref.invalidate(ticketRenderProvider(widget.log.id));
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
+    final render = ref.watch(ticketRenderProvider(widget.log.id)).valueOrNull;
 
     final idCard = [
       if (settings.idCardPrefix.isNotEmpty) settings.idCardPrefix,
@@ -105,6 +159,17 @@ class _TicketPreviewScreenState extends ConsumerState<TicketPreviewScreen> {
         title: const Text('车票预览'),
         centerTitle: true,
         actions: [
+          if (render?.hasCustom == true)
+            IconButton(
+              icon: const Icon(Icons.restore),
+              tooltip: '重置为原始车票',
+              onPressed: _busy ? null : _reset,
+            ),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: '编辑车票',
+            onPressed: _busy ? null : _openEditor,
+          ),
           IconButton(
             icon: const Icon(Icons.save_alt),
             tooltip: '保存为图片',
@@ -118,16 +183,47 @@ class _TicketPreviewScreenState extends ConsumerState<TicketPreviewScreen> {
           const SizedBox(width: 4),
         ],
       ),
+      bottomNavigationBar: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.zoom_out),
+              tooltip: '缩小',
+              onPressed: () => _zoomBy(0.8),
+            ),
+            IconButton(
+              icon: const Icon(Icons.crop_square),
+              tooltip: '完整视图(1:1)',
+              onPressed: () => _transform.value = Matrix4.identity(),
+            ),
+            IconButton(
+              icon: const Icon(Icons.zoom_in),
+              tooltip: '放大',
+              onPressed: () => _zoomBy(1.25),
+            ),
+          ],
+        ),
+      ),
       body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: RepaintBoundary(
-            key: _boundaryKey,
-            child: TicketCard(
-              log: widget.log,
-              width: width,
-              idCardText: idCard,
-              passengerName: settings.passengerName,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: InteractiveViewer(
+            transformationController: _transform,
+            minScale: 1,
+            maxScale: 6,
+            boundaryMargin: const EdgeInsets.all(40),
+            child: RepaintBoundary(
+              key: _boundaryKey,
+              child: TicketCard(
+                log: widget.log,
+                width: width,
+                idCardText: idCard,
+                passengerName: settings.passengerName,
+                textOverrides: render?.textOverrides,
+                bgImage: render?.bgImage,
+                bgMode: render?.bgMode ?? 'cover',
+              ),
             ),
           ),
         ),

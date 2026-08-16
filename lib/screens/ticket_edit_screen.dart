@@ -5,7 +5,6 @@ import 'dart:ui' as ui;
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart' show decodeImageFromList;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -13,31 +12,7 @@ import '../data/database.dart';
 import '../providers/providers.dart';
 import '../widgets/ticket_card.dart';
 
-/// 各可编辑文字在票面 viewBox 中的近似区域（红框定位）。
-/// viewBox：x -10..180，y 88..186。
-const Map<String, Rect> kEditRects = {
-  'serialNumber': Rect.fromLTWH(12, 93, 60, 14),
-  'gate': Rect.fromLTWH(138, 93, 32, 14),
-  'departureStation': Rect.fromLTWH(16, 100, 55, 16),
-  'trainNumber': Rect.fromLTWH(68, 100, 40, 16),
-  'arrivalStation': Rect.fromLTWH(108, 100, 48, 16),
-  'date': Rect.fromLTWH(20, 118, 60, 14),
-  'departureTime': Rect.fromLTWH(82, 118, 42, 14),
-  'carriage': Rect.fromLTWH(96, 118, 26, 14),
-  'seatNumber': Rect.fromLTWH(124, 118, 26, 14),
-  'price': Rect.fromLTWH(20, 125, 52, 14),
-  'buyMarks': Rect.fromLTWH(76, 125, 22, 14),
-  'seatClass': Rect.fromLTWH(112, 125, 40, 14),
-  'limitNote': Rect.fromLTWH(20, 133, 62, 12),
-  'idCard': Rect.fromLTWH(20, 144, 92, 12),
-  'passengerName': Rect.fromLTWH(114, 144, 44, 12),
-  'adLine1': Rect.fromLTWH(28, 154, 92, 11),
-  'adLine2': Rect.fromLTWH(36, 160, 68, 11),
-  'ticketNumber': Rect.fromLTWH(12, 168, 95, 12),
-  'saleLocation': Rect.fromLTWH(110, 168, 48, 12),
-};
-
-/// 车票自定义编辑页（WYSIWYG）：红框点击文字 → 输入框 → 实时预览。
+/// 车票自定义编辑页（列表形式）：可编辑票面所有文字 + 替换背景图。
 /// 只影响车票显示，不修改原记录数据。
 class TicketEditScreen extends ConsumerStatefulWidget {
   final TrainLog log;
@@ -50,9 +25,7 @@ class TicketEditScreen extends ConsumerStatefulWidget {
 }
 
 class _TicketEditScreenState extends ConsumerState<TicketEditScreen> {
-  /// 当前编辑中的覆盖（key → 自定义文本），实时反映到票面
-  late Map<String, String> _overrides;
-
+  late final Map<String, TextEditingController> _controllers;
   late String _bgPath; // 背景图源路径
   late String _bgMode;
   ui.Image? _bgPreview; // 预览背景图
@@ -71,7 +44,10 @@ class _TicketEditScreenState extends ConsumerState<TicketEditScreen> {
         }
       } catch (_) {}
     }
-    _overrides = existing;
+    _controllers = {
+      for (final f in kTicketTextFieldKeys)
+        f.key: TextEditingController(text: existing[f.key] ?? ''),
+    };
     _bgPath = ov?.bgImagePath ?? '';
     _bgMode = ov?.bgMode ?? 'cover';
     _loadPreviewBg(_bgPath);
@@ -86,46 +62,12 @@ class _TicketEditScreenState extends ConsumerState<TicketEditScreen> {
     } catch (_) {}
   }
 
-  /// 点击红框 → 弹出输入框编辑该文字
-  Future<void> _editField(String key) async {
-    final label = kTicketTextFieldKeys.firstWhere((f) => f.key == key).label;
-    final controller = TextEditingController(text: _overrides[key] ?? '');
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('编辑 $label'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 30,
-          decoration: InputDecoration(
-            hintText: '留空 = 保持原数据',
-            counterText: '',
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
-    if (result != null && mounted) {
-      setState(() {
-        if (result.isNotEmpty) {
-          _overrides[key] = result;
-        } else {
-          _overrides.remove(key);
-        }
-      });
+  @override
+  void dispose() {
+    for (final c in _controllers.values) {
+      c.dispose();
     }
-    controller.dispose();
+    super.dispose();
   }
 
   /// 选择背景图 → 解码预览（保存时复制到应用目录）
@@ -158,19 +100,24 @@ class _TicketEditScreenState extends ConsumerState<TicketEditScreen> {
         final dir = await getApplicationDocumentsDirectory();
         final bgDir = Directory('${dir.path}/ticket_bg');
         await bgDir.create(recursive: true);
-        final dest =
-            File('${bgDir.path}/ticket_${widget.log.id}.png');
+        final dest = File('${bgDir.path}/ticket_${widget.log.id}.png');
         if (dest.path != _bgPath) {
           await File(_bgPath).copy(dest.path);
         }
         finalBg = dest.path;
       }
+      final overrides = <String, String>{};
+      for (final f in kTicketTextFieldKeys) {
+        final v = _controllers[f.key]!.text.trim();
+        if (v.isNotEmpty) overrides[f.key] = v;
+      }
       await db.saveTicketOverrides(TicketOverridesCompanion(
         logId: Value(widget.log.id),
-        overridesJson: Value(jsonEncode(_overrides)),
+        overridesJson: Value(jsonEncode(overrides)),
         bgImagePath: Value(finalBg),
         bgMode: Value(_bgMode),
       ));
+      // 强制刷新（Stream 自动刷新的双保险）
       ref.invalidate(ticketRenderProvider(widget.log.id));
       if (mounted) {
         Navigator.of(context).pop();
@@ -193,7 +140,6 @@ class _TicketEditScreenState extends ConsumerState<TicketEditScreen> {
       if (settings.idCardSuffix.isNotEmpty) settings.idCardSuffix,
     ].join();
     final width = MediaQuery.sizeOf(context).width - 16;
-    final ticketHeight = width * 98 / 190;
 
     return Scaffold(
       appBar: AppBar(
@@ -204,37 +150,46 @@ class _TicketEditScreenState extends ConsumerState<TicketEditScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(16),
         children: [
+          // ---- 实时预览 ----
           Center(
-            child: Text(
-              '点击红色框编辑文字，实时生效（仅影响显示，不改记录）',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            child: TicketCard(
+              log: widget.log,
+              width: width,
+              idCardText: idCard,
+              passengerName: settings.passengerName,
+              textOverrides: _currentOverrides(),
+              bgImage: _bgPreview,
+              bgMode: _bgMode,
             ),
           ),
           const SizedBox(height: 8),
-          // ---- 实时预览 + 红框 ----
-          SizedBox(
-            width: width,
-            height: ticketHeight,
-            child: Stack(
-              children: [
-                TicketCard(
-                  log: widget.log,
-                  width: width,
-                  idCardText: idCard,
-                  passengerName: settings.passengerName,
-                  textOverrides: _overrides,
-                  bgImage: _bgPreview,
-                  bgMode: _bgMode,
-                ),
-                // 红框覆盖层
-                for (final e in kEditRects.entries) _buildEditBox(e.key, e.value),
-              ],
-            ),
+          Text(
+            '仅修改车票显示，不会更改实际记录；留空 = 保持原数据。',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            textAlign: TextAlign.center,
           ),
           const Divider(height: 30),
-          // ---- 背景图按钮（放下面） ----
+          Text('票面文字', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          for (final f in kTicketTextFieldKeys)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: TextField(
+                controller: _controllers[f.key],
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  labelText: f.label,
+                  hintText: _originalValue(f.key),
+                  counterText: '',
+                  isDense: true,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ),
+          const Divider(height: 30),
+          // ---- 背景图按钮放下面 ----
           Text('背景图', style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
           SegmentedButton<String>(
@@ -266,34 +221,70 @@ class _TicketEditScreenState extends ConsumerState<TicketEditScreen> {
               ],
             ],
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  /// 单个红框（可点击弹出输入框），viewBox rect → widget 坐标
-  Widget _buildEditBox(String key, Rect vb) {
-    final left = (vb.left + 10) / 190;
-    final top = (vb.top - 88) / 98;
-    final w = vb.width / 190;
-    final h = vb.height / 98;
-    return Positioned(
-      left: left * (MediaQuery.sizeOf(context).width - 16),
-      top: top * ((MediaQuery.sizeOf(context).width - 16) * 98 / 190),
-      width: w * (MediaQuery.sizeOf(context).width - 16),
-      height: h * ((MediaQuery.sizeOf(context).width - 16) * 98 / 190),
-      child: GestureDetector(
-        onTap: () => _editField(key),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.red.shade400, width: 1.5),
-            borderRadius: BorderRadius.circular(2),
-          ),
-          child: _overrides[key]?.isNotEmpty == true
-              ? const Icon(Icons.edit, size: 10, color: Colors.red)
-              : null,
-        ),
-      ),
-    );
+  /// 当前编辑中的覆盖（实时预览用）
+  Map<String, String> _currentOverrides() {
+    final m = <String, String>{};
+    for (final f in kTicketTextFieldKeys) {
+      final v = _controllers[f.key]!.text.trim();
+      if (v.isNotEmpty) m[f.key] = v;
+    }
+    return m;
   }
+
+  /// 各字段的原始值（作为 hint 提示）
+  String _originalValue(String key) {
+    final l = widget.log;
+    switch (key) {
+      case 'trainNumber':
+        return '原: ${l.trainNumber}';
+      case 'departureStation':
+        return '原: ${l.departureStation}';
+      case 'arrivalStation':
+        return '原: ${l.arrivalStation}';
+      case 'depSuffix':
+        return '原: 站';
+      case 'arrSuffix':
+        return '原: 站';
+      case 'date':
+        return '原: ${_fmtDate(l.date)}';
+      case 'departureTime':
+        return '原: ${l.departureTime}';
+      case 'carriage':
+        return '原: ${l.carriage}';
+      case 'seatNumber':
+        return '原: ${l.seatNumber}';
+      case 'seatClass':
+        return '原: ${l.seatClass}';
+      case 'price':
+        return '原: ${l.price}';
+      case 'gate':
+        return '原: ${l.gate}';
+      case 'buyMarks':
+        return '原: ${l.buyMarks}';
+      case 'serialNumber':
+        return '原: ${l.serialNumber}';
+      case 'ticketNumber':
+        return '原: ${l.ticketNumber}';
+      case 'saleLocation':
+        return '原: ${l.saleLocation}';
+      case 'limitNote':
+        return '原: 限乘当日当次车';
+      case 'adLine1':
+        return '原: 买票请到12306发货请到95306';
+      case 'adLine2':
+        return '原: 中国铁路祝您旅途愉快';
+      default:
+        return '';
+    }
+  }
+
+  String _fmtDate(DateTime d) =>
+      '${d.year}年${d.month.toString().padLeft(2, '0')}月'
+      '${d.day.toString().padLeft(2, '0')}日';
 }
