@@ -29,17 +29,28 @@ class _TicketPreviewScreenState extends ConsumerState<TicketPreviewScreen> {
   final _transform = TransformationController();
   bool _busy = false;
 
+  /// 视口尺寸（LayoutBuilder 时更新，按钮缩放以视口中心为锚点）
+  Size _viewportSize = Size.zero;
+
   @override
   void dispose() {
     _transform.dispose();
     super.dispose();
   }
 
-  /// 缩放控制（1x ~ 6x）
+  /// 缩放控制（1x ~ 6x），以视口中心为锚点（车票保持居中，不会偏移）
   void _zoomBy(double factor) {
+    if (_viewportSize.isEmpty) return;
     final scale =
         (_transform.value.getMaxScaleOnAxis() * factor).clamp(1.0, 6.0);
-    _transform.value = Matrix4.diagonal3Values(scale, scale, 1);
+    final c = Offset(_viewportSize.width / 2, _viewportSize.height / 2);
+    // M' = T(c) * S(scale) * T(-c) * M：绕视口中心缩放，保留已有平移
+    final m = Matrix4.identity()
+      ..translateByDouble(c.dx, c.dy, 0, 1)
+      ..scaleByDouble(scale, scale, 1, 1)
+      ..translateByDouble(-c.dx, -c.dy, 0, 1)
+      ..multiply(_transform.value);
+    _transform.value = m;
   }
 
   /// 把车票渲染成 PNG 字节
@@ -205,28 +216,39 @@ class _TicketPreviewScreenState extends ConsumerState<TicketPreviewScreen> {
           ],
         ),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: InteractiveViewer(
+      // 视口撑满整个 body：InteractiveViewer 内部 ClipRect 会收缩到子组件
+      // 大小，若直接包车票会导致缩放时车票只占据屏幕中间一条（上下露深色底）。
+      // 因此子组件用视口等大的 SizedBox + Center，车票居中，缩放/平移以整个
+      // 屏幕为视口。
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          _viewportSize = constraints.biggest;
+          return InteractiveViewer(
             transformationController: _transform,
             minScale: 1,
             maxScale: 6,
-            boundaryMargin: const EdgeInsets.all(40),
-            child: RepaintBoundary(
-              key: _boundaryKey,
-              child: TicketCard(
-                log: widget.log,
-                width: width,
-                idCardText: idCard,
-                passengerName: settings.passengerName,
-                textOverrides: render?.textOverrides,
-                bgImage: render?.bgImage,
-                bgMode: render?.bgMode ?? 'cover',
+            // 无限边界：放大后可自由平移，不会卡在初始位置
+            boundaryMargin: const EdgeInsets.all(double.infinity),
+            child: SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: Center(
+                child: RepaintBoundary(
+                  key: _boundaryKey,
+                  child: TicketCard(
+                    log: widget.log,
+                    width: width,
+                    idCardText: idCard,
+                    passengerName: settings.passengerName,
+                    textOverrides: render?.textOverrides,
+                    bgImage: render?.bgImage,
+                    bgMode: render?.bgMode ?? 'cover',
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
