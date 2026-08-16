@@ -57,9 +57,6 @@ class TicketCard extends StatelessWidget {
   /// 背景映射模式：cover / contain / fill
   final String bgMode;
 
-  /// 绘制完成后回调（各文字元素的 viewBox 区域，编辑模式红框用）
-  final void Function(Map<String, Rect>)? onTextRects;
-
   const TicketCard({
     super.key,
     required this.log,
@@ -69,7 +66,6 @@ class TicketCard extends StatelessWidget {
     this.textOverrides,
     this.bgImage,
     this.bgMode = 'cover',
-    this.onTextRects,
   });
 
   @override
@@ -85,7 +81,6 @@ class TicketCard extends StatelessWidget {
           textOverrides ?? const {},
           bgImage,
           bgMode,
-          onTextRects,
         ),
       ),
     );
@@ -107,12 +102,6 @@ class _TicketPainter extends CustomPainter {
   final ui.Image? bgImage;
   final String bgMode;
 
-  /// 各文字元素的 viewBox 区域（编辑模式红框定位），paint 时更新
-  final Map<String, Rect> textRects = {};
-
-  /// 绘制完成后回调（key → viewBox Rect）
-  final void Function(Map<String, Rect>)? onTextRects;
-
   _TicketPainter(
     this.log, [
     this.idCardText = '',
@@ -120,23 +109,11 @@ class _TicketPainter extends CustomPainter {
     this.textOverrides = const {},
     this.bgImage,
     this.bgMode = 'cover',
-    this.onTextRects,
   ]);
 
   /// 读取覆盖文字：有覆盖值用之，否则回退到原数据
   String _ov(String key, String fallback) =>
       textOverrides[key]?.isNotEmpty == true ? textOverrides[key]! : fallback;
-
-  /// 记录某文字元素的 viewBox 区域（供编辑模式画红框）
-  void _mark(String key, TextPainter tp, double xv, double yv, double scaleX,
-      double scaleY) {
-    textRects[key] = Rect.fromLTWH(
-      xv,
-      yv,
-      tp.width / scaleX,
-      tp.height / scaleY,
-    );
-  }
 
   static const _vw = 190.0; // viewBox 宽（x: -10..180）
   // 裁剪画布：y 只保留内容区 88..186（98 高），去掉上方大片空白
@@ -165,14 +142,12 @@ class _TicketPainter extends CustomPainter {
     final tn = _ov('ticketNumber', log.ticketNumber);
     if (tn.isNotEmpty) {
       final tnTp = _tp(tn, 5, sx, family: 'NotoSerifSC');
-      _mark('ticketNumber', tnTp, bx, 170, X(1) - X(0), Y(1) - Y(0));
       tnTp.paint(canvas, Offset(X(bx), Y(170)));
       bx += tnTp.width / (X(1) - X(0)) + 1;
     }
     final sl = _ov('saleLocation', log.saleLocation);
     if (sl.isNotEmpty) {
       final slTp = _tp(sl, 5, sx, family: 'NotoSerifSC');
-      _mark('saleLocation', slTp, bx, 170, X(1) - X(0), Y(1) - Y(0));
       slTp.paint(canvas, Offset(X(bx), Y(170)));
     }
   }
@@ -304,8 +279,7 @@ class _TicketPainter extends CustomPainter {
       double y,
       double sx,
       double Function(double) X,
-      double Function(double) Y,
-      {String? key}) {
+      double Function(double) Y) {
     final scaleX = X(1) - X(0);
     var cx = x;
     var total = 0.0;
@@ -318,9 +292,6 @@ class _TicketPainter extends CustomPainter {
       final w = tp.width / scaleX;
       cx += w + 0.3;
       total += w + 0.3;
-    }
-    if (key != null) {
-      textRects[key] = Rect.fromLTWH(x, y, total - 0.3, maxSize * 1.3);
     }
     return total - 0.3;
   }
@@ -337,18 +308,15 @@ class _TicketPainter extends CustomPainter {
       double Function(double) X, double Function(double) Y) {
     final sx = size.width / _vw;
     final scaleX = X(1) - X(0);
-    final scaleY = Y(1) - Y(0);
 
     // L1 流水号（半透明红）+ 检票口
     if (_ov('serialNumber', log.serialNumber).isNotEmpty) {
       final snTp = _tp(_ov('serialNumber', log.serialNumber), 6.5, sx,
           color: _kRed);
-      _mark('serialNumber', snTp, 14, 96.5, scaleX, scaleY);
       snTp.paint(canvas, Offset(X(14), Y(96.5)));
     }
     if (_ov('gate', log.gate).isNotEmpty) {
       final gate = _tp('检票口${_ov('gate', log.gate)}', 6, sx, family: 'NotoSerifSC');
-      _mark('gate', gate, 157 - gate.width / scaleX, 96.5, scaleX, scaleY);
       gate.paint(canvas, Offset(X(157) - gate.width, Y(96.5)));
     }
 
@@ -376,12 +344,9 @@ class _TicketPainter extends CustomPainter {
 
     // 出发站（左）：到票边距 = 到车次距
     final xDep = (xc0 + 9 - ws) / 2;
-    _mark('departureStation', tMain, xDep, 104, scaleX, scaleY);
     tMain.paint(canvas, Offset(X(xDep), Y(104)));
     if (depTail.isNotEmpty) {
       final depTp = _tp(depTail, 5.5, sx, family: 'NotoSerifSC');
-      _mark('departureStation', depTp, xDep + wMain + 1.5, 104 + (9.5 - 5.5),
-          scaleX, scaleY);
       depTp.paint(canvas, Offset(X(xDep + wMain + 1.5), Y(104 + (9.5 - 5.5))));
     }
 
@@ -391,18 +356,14 @@ class _TicketPainter extends CustomPainter {
         arrTail.isEmpty ? 0.0 : (_tp(arrTail, 5.5, sx, family: 'NotoSerifSC').width / scaleX + 1.5);
     final xArr = (162 + xc1 - (wm2 + wt2)) / 2;
     final arrTp = _tp(arrMain, 9.5, sx);
-    _mark('arrivalStation', arrTp, xArr, 104, scaleX, scaleY);
     arrTp.paint(canvas, Offset(X(xArr), Y(104)));
     if (arrTail.isNotEmpty) {
       final arrTailTp = _tp(arrTail, 5.5, sx, family: 'NotoSerifSC');
-      _mark('arrivalStation', arrTailTp, xArr + wm2 + 1.5, 104 + (9.5 - 5.5),
-          scaleX, scaleY);
       arrTailTp.paint(
           canvas, Offset(X(xArr + wm2 + 1.5), Y(104 + (9.5 - 5.5))));
     }
 
     // 车次
-    _mark('trainNumber', tc, 86 - wc / 2, 104, scaleX, scaleY);
     tc.paint(canvas, Offset(X(86 - wc / 2), Y(104)));
 
     // L3 拼音：站名主体正下方（自动生成，首字母大写）
@@ -442,15 +403,14 @@ class _TicketPainter extends CustomPainter {
         ('日', 4.0, FontWeight.normal, true),
       ];
     }
-    final dateW = _drawRich(canvas, dateSegs, 20, 121, sx, X, Y, key: 'date');
+    final dateW = _drawRich(canvas, dateSegs, 20, 121, sx, X, Y);
     if (timeStr.isNotEmpty) {
       final timeSegs = <(String, double, FontWeight, bool)>[
         (' ', 6, FontWeight.normal, false),
         (timeStr, 6.5, FontWeight.normal, false),
         ('开', 4.0, FontWeight.normal, true),
       ];
-      _drawRich(canvas, timeSegs, 20 + dateW, 121, sx, X, Y,
-          key: 'departureTime');
+      _drawRich(canvas, timeSegs, 20 + dateW, 121, sx, X, Y);
     }
 
     // 席位：座位号右对齐 x138，车厢号在其左侧（不重叠）
@@ -476,12 +436,10 @@ class _TicketPainter extends CustomPainter {
       final cw = _richW(carSegs, sx, scaleX);
       // 车厢号右端 = 座位号左端 - 0.5；无座位时右对齐 138
       final carRight = seat.isNotEmpty ? 138 - sw - 0.5 : 138.0;
-      _drawRich(canvas, carSegs, carRight - cw, 121, sx, X, Y,
-          key: 'carriage');
+      _drawRich(canvas, carSegs, carRight - cw, 121, sx, X, Y);
     }
     if (seat.isNotEmpty) {
-      _drawRich(canvas, seatSegs, 138 - sw, 121, sx, X, Y,
-          key: 'seatNumber');
+      _drawRich(canvas, seatSegs, 138 - sw, 121, sx, X, Y);
     }
 
     // L5 价格 + 购票标记 + 席别
@@ -493,24 +451,21 @@ class _TicketPainter extends CustomPainter {
             6, FontWeight.normal, false),
         (price.endsWith('元') ? '元' : '', 5, FontWeight.normal, true),
       ];
-      _drawRich(canvas, priceSegs, 20, 128.5, sx, X, Y, key: 'price');
+      _drawRich(canvas, priceSegs, 20, 128.5, sx, X, Y);
     }
     if (_ov('buyMarks', log.buyMarks).isNotEmpty) {
       final bmTp = _tp(_ov('buyMarks', log.buyMarks), 5, sx,
           family: 'NotoSerifSC');
-      _mark('buyMarks', bmTp, 20 + 6.5 * 8 + 6, 128.5, scaleX, scaleY);
       bmTp.paint(canvas, Offset(X(20 + 6.5 * 8 + 6), Y(128.5)));
     }
     if (_ov('seatClass', log.seatClass).isNotEmpty) {
       final sc = _tp(_ov('seatClass', log.seatClass), 5, sx, family: 'NotoSerifSC');
-      _mark('seatClass', sc, 138 - sc.width / scaleX, 128.5, scaleX, scaleY);
       sc.paint(canvas, Offset(X(138) - sc.width, Y(128.5)));
     }
 
     // L6 限乘
         final limitTp = _tp(_ov('limitNote', '限乘当日当次车'), 4.5, sx,
         family: 'NotoSerifSC');
-    _mark('limitNote', limitTp, 20, 135.5, scaleX, scaleY);
     limitTp.paint(canvas, Offset(X(20), Y(135.5)));
 
     // L8 乘车人：身份证（前10****后4）+ 姓名（设置页，本地保存）
@@ -521,7 +476,7 @@ class _TicketPainter extends CustomPainter {
         if (idCard.isNotEmpty) (idCard, 6, FontWeight.normal, false),
       ];
       if (idSegs.isNotEmpty) {
-        _drawRich(canvas, idSegs, 20, 146, sx, X, Y, key: 'idCard');
+        _drawRich(canvas, idSegs, 20, 146, sx, X, Y);
       }
       if (name.isNotEmpty) {
         final nameSegs = <(String, double, FontWeight, bool)>[
@@ -529,8 +484,7 @@ class _TicketPainter extends CustomPainter {
           (name, 6, FontWeight.normal, true),
         ];
         _drawRich(canvas, nameSegs,
-            idSegs.isEmpty ? 20 : 20 + _richW(idSegs, sx, scaleX), 146, sx, X, Y,
-            key: 'passengerName');
+            idSegs.isEmpty ? 20 : 20 + _richW(idSegs, sx, scaleX), 146, sx, X, Y);
       }
     }
   }
@@ -624,11 +578,7 @@ class _TicketPainter extends CustomPainter {
     dashLine(Offset(X(bx1), Y(boxY0)), Offset(X(bx1), Y(by1)));
 
     final cx = X(textCxVb);
-    _mark('adLine1', l1, textCxVb - l1.width / (X(1) - X(0)), ly1,
-        X(1) - X(0), Y(1) - Y(0));
     l1.paint(canvas, Offset(cx - l1.width / 2, Y(ly1)));
-    _mark('adLine2', l2, textCxVb - l2.width / (X(1) - X(0)), ly2,
-        X(1) - X(0), Y(1) - Y(0));
     l2.paint(canvas, Offset(cx - l2.width / 2, Y(ly2)));
   }
 
@@ -660,7 +610,6 @@ class _TicketPainter extends CustomPainter {
     }
   }
 
-  @override
   @override
   bool shouldRepaint(covariant _TicketPainter oldDelegate) =>
       oldDelegate.log != log ||
